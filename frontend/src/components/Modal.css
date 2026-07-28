@@ -1,0 +1,68 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; 
+}
+
+.modal {
+  background: #1f2937;
+  padding: 25px 30px; 
+  border-radius: 12px;
+  text-align: center;
+  max-width: 900px;
+  width: 90%;
+  border: none;     
+  outline: none;     
+  box-shadow: none; 
+       
+}
+
+.modal button {
+  margin-top: 15px;
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+/* Estilos de Texto */
+/* Texto padrão do modal */
+.modal-texto {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-size: 16px; 
+  color: #ffffff;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+
+/* Título do modal */
+.modal-titulo {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-size: 30px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.botao-modal {
+  background-color: #ffffff; 
+  color: #1f2937;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px; 
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.botao-modal:hover {
+  background-color: rgba(31, 41, 55, 0.2);
+  color: white;
+}

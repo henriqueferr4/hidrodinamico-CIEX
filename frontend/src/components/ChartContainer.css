@@ -1,0 +1,45 @@
+.chart-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%; /* 👈 Respeita a altura distribuída pelo flex (mapSection e chartSection) */
+  box-sizing: border-box;
+  position: relative; /* 👈 Dá base para o mapa absoluto se posicionar */
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-shrink: 0; /* Garante que o título não seja achatado */
+}
+
+.chart-header h2 {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.updated {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Área interna onde entram o MapView ou o LineChartNivel */
+.chart-content {
+  width: 100%;
+  flex: 1; 
+  min-height: 0; 
+  min-width: 0;
+  overflow: hidden;
+  position: relative; 
+  display: flex;
+  flex-direction: column;
+}
+

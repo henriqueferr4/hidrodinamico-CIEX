@@ -1,0 +1,32 @@
+services:
+  dashboard-telemac:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: dashboard-telemac:latest
+    container_name: dashboard-telemac
+
+    restart: unless-stopped
+
+    volumes:
+      - /mnt/docker/data:/usr/share/nginx/html/data:ro
+    
+    # ports:
+    #   - "8080:80"
+
+    networks:
+      - proxy
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.dashboard-telemac.rule=Host(`hidrodinamica.ciex.org.br`)"
+      - "traefik.http.routers.dashboard-telemac.tls=true"
+      - "traefik.http.routers.dashboard-telemac.middlewares=security-headers@file"
+      - "traefik.http.routers.dashboard-telemac.service=dashboard-telemac"
+      - "traefik.http.services.dashboard-telemac.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true

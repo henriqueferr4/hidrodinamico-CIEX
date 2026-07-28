@@ -1,0 +1,375 @@
+import { useState, useEffect } from "react";
+import { Source, Layer } from "react-map-gl/mapbox";
+
+export default function LayerCorrente({
+  timeStep,
+  setTimeStep,
+  dataFormatada,
+  setDataFormatada,
+  fonteDados
+}) {
+  const [geojsonVelocidade, setGeojsonVelocidade] = useState(null);
+  const [geojsonDirecao, setGeojsonDirecao] = useState(null);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [dataBaseTimeline, setDataBaseTimeline] = useState(null);
+
+  const maxTimeStep = fonteDados === "previsao" ? 72 : 701;
+  const tickInterval = fonteDados === "previsao" ? 24 : 120;
+
+  const ticks = [];
+  for (let i = 0; i <= maxTimeStep; i += tickInterval) {
+    ticks.push(i);
+  }
+  if (ticks[ticks.length - 1] !== maxTimeStep) {
+    ticks.push(maxTimeStep);
+  }
+
+  // Effect do Timer (Play/Pause)
+  useEffect(() => {
+    let interval = null;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setTimeStep((prevStep) => {
+          if (prevStep >= maxTimeStep) return 0;
+          return prevStep + 1;
+        });
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, setTimeStep, maxTimeStep]);
+
+  // Effect para carregar os dados temporais
+  useEffect(() => {
+    if (!fonteDados || timeStep == null) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const carregarGeoJSON = async () => {
+      try {
+        const timestep = String(timeStep).padStart(3, "0");
+
+        const [respVelocidade, respDirecao] = await Promise.all([
+          fetch(`/data/corrente_velocidade_timestep_${timestep}.geojson`, { signal }),
+          fetch(`/data/corrente_direcao_timestep_${timestep}.geojson`, { signal })
+        ]);
+
+        // Se o servidor retornar erro 404 (página html), joga para o catch e evita o crash do JSON
+        if (!respVelocidade.ok || !respDirecao.ok) {
+          throw new Error(`Arquivos do timestep_${timestep} não foram encontrados no servidor.`);
+        }
+
+        const velocidadeData = await respVelocidade.json();
+        const direcaoData = await respDirecao.json();
+
+        const velocidadeNormalizada = {
+        ...velocidadeData,
+        features: velocidadeData.features.map((f) => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            velocidade: f.properties.velocidade * 100
+          }
+        }))
+      };
+
+      setGeojsonVelocidade(velocidadeNormalizada);
+
+        const direcaoNormalizada = {
+  ...direcaoData,
+  features: direcaoData.features.map((f) => ({
+    ...f,
+    properties: {
+      ...f.properties
+    }
+  }))
+};
+
+setGeojsonDirecao(direcaoNormalizada);
+
+        const date = velocidadeData.date || velocidadeData.features?.[0]?.properties?.date;
+        const hour = velocidadeData.hour || velocidadeData.features?.[0]?.properties?.hour;
+
+        if (date && hour) {
+          const [ano, mes, dia] = date.split("-");
+          const horaFormatada = hour.substring(0, 5);
+          setDataFormatada(`${dia}/${mes}/${ano} ${horaFormatada}`);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Erro na esteira de dados de vento:", error.message);
+        }
+      }
+    };
+
+    carregarGeoJSON();
+    return () => controller.abort();
+  }, [timeStep, fonteDados, setDataFormatada]);
+
+  // 2. EFFECT DA DATA BASE DA TIMELINE
+  useEffect(() => {
+    if (!fonteDados) return;
+
+    const carregarDataBase = async () => {
+      try {
+        const response = await fetch(`/data/corrente_velocidade_timestep_000.geojson`);
+
+        if (!response.ok) {
+          throw new Error("Arquivo timestep_000.geojson de velocidade de referência não encontrado.");
+        }
+
+        const data = await response.json();
+        const date = data.date || data.features?.[0]?.properties?.date;
+        const hour = data.hour || data.features?.[0]?.properties?.hour;
+
+        if (date && hour) {
+          setDataBaseTimeline(new Date(`${date}T${hour}`));
+        }
+      } catch (error) {
+        console.error("Erro ao iniciar timeline de vento:", error.message);
+      }
+    };
+
+    carregarDataBase();
+  }, [fonteDados]);
+
+  return (
+    <>
+     {/* LEGENDA CORRENTE (0 a 50 escala visual) */}
+<div
+  style={{
+    position: "absolute",
+    right: "20px",
+    top: "20px",
+    zIndex: 1000,
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(8px)",
+    border: "1px solid rgba(255,255,255,0.4)",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    boxShadow: "0 6px 20px rgba(42,61,89,0.1)"
+  }}
+>
+  <div
+    style={{
+      fontSize: "12px",
+      fontWeight: "700",
+      textAlign: "center",
+      marginBottom: "10px",
+      color: "#2A3D59"
+    }}
+  >
+    Velocidade da <br/>
+    corrente (m/s)
+  </div>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <div
+      style={{
+        width: "14px",
+        height: "300px",
+        borderRadius: "4px",
+        background:
+          "linear-gradient(to top, #2D1E5F, #3B0F70, #2C3E8C, #1F5AA6, #1177B3, #1F9E89, #35B779, #B4DE2C, #FDE725, #F8961E, #DC2F02)"
+      }}
+    />
+
+    <div
+      style={{
+        height: "300px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        fontSize: "11px",
+        fontWeight: "600",
+        color: "#2A3D59"
+      }}
+    >
+      <span>1</span>
+      <span>0.8</span>
+      <span></span>
+      <span>0.6</span>
+      <span></span>
+      <span></span>
+      <span>0.4</span>
+      <span></span>
+      <span>0.2</span>
+      <span>0</span>
+    </div>
+  </div>
+</div>
+
+      {/* TIMELINE */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "65%",
+          minWidth: "400px",
+          zIndex: 1000,
+          background: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(8px)",
+          padding: "10px 18px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 30px rgba(42,61,89,0.15)",
+          border: "1px solid rgba(42,61,89,0.1)"
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              style={{
+                background: "#2A3D59",
+                border: "none",
+                borderRadius: "50%",
+                width: "32px",
+                height: "32px",
+                cursor: "pointer",
+                color: "white"
+              }}
+            >
+              {isPlaying ? (
+                <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+                  <path d="M2 1V11M8 1V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="none" style={{ marginLeft: "2px" }}>
+                  <path
+                    d="M1.5 1.75V12.25L9.75 7L1.5 1.75Z"
+                    fill="white"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+            <span style={{ fontSize: "15px", fontWeight: "700", color: "#2A3D59" }}>
+              {dataFormatada || "..."}
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: "600",
+              background: "rgba(42,61,89,0.1)",
+              color: "#2A3D59",
+              padding: "4px 10px",
+              borderRadius: "20px"
+            }}
+          >
+            + {timeStep}h
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={maxTimeStep}
+          value={timeStep}
+          step={1}
+          onChange={(e) => setTimeStep(Number(e.target.value))}
+          style={{ width: "100%", marginTop: "10px", accentColor: "#2A3D59" }}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+          {ticks.map((tick) => {
+            let textoMarcador = tick === 0 ? "Início" : `+${tick}h`;
+            if (dataBaseTimeline) {
+              const dataMarcador = new Date(dataBaseTimeline);
+              dataMarcador.setHours(dataMarcador.getHours() + tick);
+              const dia = String(dataMarcador.getDate()).padStart(2, "0");
+              const mes = dataMarcador.toLocaleDateString("pt-BR", { month: "short" });
+              textoMarcador = `${dia} ${mes}`;
+            }
+            return (
+              <div
+                key={tick}
+                style={{ fontSize: "11px", color: timeStep >= tick ? "#2A3D59" : "#A0AEC0" }}
+              >
+                {textoMarcador}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ==================== RENDERIZAÇÃO DAS CAMADAS OPERACIONAIS ==================== */}
+
+      {/* 1. CAMADA DE VELOCIDADE (0 a 50 m/s escala visual) */}
+{geojsonVelocidade && (
+  <Source
+    id="corrente-velocidade"
+    type="geojson"
+    data={geojsonVelocidade}
+  >
+    <Layer
+      id="corrente-velocidade-fill"
+      type="fill"
+      paint={{
+        "fill-color": [
+          "interpolate",
+          ["linear"],
+          ["get", "velocidade"],
+
+            0, "#2D1E5F",
+            5, "#3B0F70",
+            10, "#2C3E8C",
+            15, "#1F5AA6",
+            20, "#1177B3",
+            25, "#1F9E89",
+            30, "#35B779",
+            40, "#B4DE2C",
+            60, "#FDE725",
+            80, "#F8961E",
+            100, "#DC2F02"
+        ],
+
+        "fill-opacity": 0.9,
+        "fill-antialias": false
+      }}
+    />
+  </Source>
+)}
+
+      {/* 2. CAMADA DE DIREÇÃO (Setas/Vetores desenhados por cima) */}
+    {geojsonDirecao && (
+    <Source id="corrente-direcao" type="geojson" data={geojsonDirecao}>
+        
+       <Layer
+            id="corrente-direcao-setas"
+            type="symbol"
+            layout={{
+              "text-field": "↑",
+              "symbol-spacing": 10,
+              "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                3, 10,
+                5, 14,
+                7, 18,
+                10, 24,
+                15, 48
+
+              ],
+              "symbol-placement": "point",
+              "text-rotate": ["get", "direcao"],
+              "text-rotation-alignment": "map",
+              "text-keep-upright": false,
+              "text-anchor": "center"
+            }}
+            paint={{
+              "text-color": "#ffffff",
+              "text-opacity": 0.95,
+              "text-halo-width": 2
+            }}
+          />
+
+    </Source>
+    )}
+    </>
+  );
+}

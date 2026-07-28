@@ -1,0 +1,13 @@
+/* container das logos */
+.logos {
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+/* imagens */
+.logos img {
+  height: 60px;
+  padding: 6px;
+  object-fit: contain;
+}
