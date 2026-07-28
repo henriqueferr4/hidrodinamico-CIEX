@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+frontend/dist/
+
+# Arquivos de ambiente
+.env
+.env.*
+frontend/.env
+frontend/.env.*
+
+# Permite versionar apenas os exemplos
+!.env.example
+!frontend/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos do VS Code
+.vscode/
+
+# IDE JetBrains
+.idea/
