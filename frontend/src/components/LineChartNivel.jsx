@@ -24,7 +24,7 @@ const COTA_INUNDACAO_POR_ID = {
   1: 80,   // FURG_CCMAR
   2: 148,  // S_Lourenco
   3: 225,  // Arambare
-  4: 108,  // S_Jose_Norte
+  4: 80,  // S_Jose_Norte
   5: 280   // Itapua
 };
 
@@ -181,22 +181,24 @@ export default function ChartNivel({ estacaoSelecionada }) {
           />
 
           <YAxis
-              domain={([dataMin, dataMax]) => {
-            const valores = [
-              dataMin,
-              dataMax,
-              cotaInundacao
-            ].filter(v => v !== null && v !== undefined);
+            tickCount={8}
+            allowDecimals={false}
+            domain={([dataMin, dataMax]) => {
+              const valores = [
+                dataMin,
+                dataMax,
+                cotaInundacao,
+              ].filter(v => v !== null && v !== undefined);
 
-            const minimo = Math.min(...valores);
-            const maximo = Math.max(...valores);
+              const minimo = Math.min(...valores);
+              const maximo = Math.max(...valores);
 
-            const margem = (maximo - minimo) * 0.15;
+              const margem = (maximo - minimo) * 0.15;
 
-            return [
-              Math.floor(minimo - margem),
-              Math.ceil(maximo + margem)
-            ];
+              const min = Math.floor((minimo - margem) / 5) * 5;
+              const max = Math.ceil((maximo + margem) / 5) * 5;
+
+              return [min, max];
           }}>
             <Label
               value="Nível (cm)"
@@ -217,7 +219,8 @@ export default function ChartNivel({ estacaoSelecionada }) {
 
               // esconde as séries auxiliares usadas só para desenhar a faixa
               const visiveis = payload.filter(
-                (p) => typeof p.dataKey !== "function" && p.dataKey !== "previsaoMin" && p.dataKey !== "previsaoMax"
+                ({ dataKey }) =>
+                  !["previsaoMin", "previsaoMax", "faixaErro"].includes(dataKey)
               );
 
               return (

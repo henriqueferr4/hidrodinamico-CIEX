@@ -32,8 +32,10 @@ export default function Header({ open, drawerWidth }) {
       {/* Logos */}
       <div className="logos">
         <img src="/logo1.png" alt="logo1" />
-        <img src="/logo2.png" alt="logo2" />
+        <img src="/logo4.png" alt="logo2" />
+        <img src="/logo2.png" alt="logo3" />
         <img src="/logo3.png" alt="logo3" />
+        <img src="/logo5.png" alt="logo3" />
       </div>
 
         </Box>
