@@ -60,7 +60,7 @@ export default function Chart() {
   verticalAlign="middle"
   wrapperStyle={{
     right: 0,
-    paddingLeft: "10px", // 👈 espaço entre gráfico e legenda
+    paddingLeft: "10px",
     lineHeight: "28px"
   }}
 />

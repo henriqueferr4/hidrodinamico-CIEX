@@ -27,6 +27,34 @@ services:
       - "traefik.http.routers.dashboard-telemac.service=dashboard-telemac"
       - "traefik.http.services.dashboard-telemac.loadbalancer.server.port=80"
 
+  traefik:
+    image: traefik:3.6.1
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/traefik.yml:/traefik.yml:ro
+      - ./data/dynamic.yml:/dynamic.yml:ro
+      - ./data/acme.json:/acme.json
+    labels:
+      - "traefik.enable=true"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - proxy
+
 networks:
   proxy:
     external: true
