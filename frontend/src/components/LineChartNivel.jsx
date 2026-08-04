@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from "react";
 import {
   ComposedChart,
   Line,
@@ -11,6 +11,8 @@ import {
   Legend,
   Label
 } from "recharts";
+
+import * as htmlToImage from "html-to-image";
 
 const SENSOR_POR_ID = {
   1: "FURG_CCMAR",
@@ -28,7 +30,8 @@ const COTA_INUNDACAO_POR_ID = {
   5: 280   // Itapua
 };
 
-export default function ChartNivel({ estacaoSelecionada }) {
+const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
+  const chartRef = useRef(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erroMedio, setErroMedio] = useState(null);
@@ -43,6 +46,42 @@ export default function ChartNivel({ estacaoSelecionada }) {
         })
         .map((item) => item.timestamp)
     : [];
+
+  const baixarGrafico = async () => {
+    if (!chartRef.current) return;
+
+    try {
+          const PADDING = 12;
+    const node = chartRef.current;
+    const { width, height } = node.getBoundingClientRect();
+      const dataUrl = await htmlToImage.toPng(chartRef.current, {
+        pixelRatio: 3,
+        backgroundColor: "#ffffff",
+         width: width + PADDING * 2,
+        height: height + PADDING * 2,
+        style: {
+          // como o canvas ficou maior, precisa "deslocar" o conteúdo
+          // para dentro da nova área, senão ele fica grudado no canto
+          transform: `translate(${PADDING}px, ${PADDING}px)`,
+          transformOrigin: "top left",
+          // opcional: garante que o fundo cubra a área toda
+          width: `${width}px`,
+          height: `${height}px`,
+        },
+      });
+
+      const link = document.createElement("a");
+      link.download = `nivel_${SENSOR_POR_ID[estacaoSelecionada.id]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    baixarGrafico
+  }));
 
   useEffect(() => {
     if (!estacaoSelecionada) return;
@@ -108,30 +147,30 @@ export default function ChartNivel({ estacaoSelecionada }) {
           }
         });
 
-    const listaUnificada = Object.values(mapaAgrupado)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map((item) => {
-        const temPrevisao = item.previsao !== null && item.previsao !== undefined;
-        const temErro = erro !== undefined && erro !== null;
+        const listaUnificada = Object.values(mapaAgrupado)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((item) => {
+            const temPrevisao = item.previsao !== null && item.previsao !== undefined;
+            const temErro = erro !== undefined && erro !== null;
 
-        const previsaoMin = temPrevisao && temErro
-          ? Number((item.previsao - erro).toFixed(1))
-          : null;
+            const previsaoMin = temPrevisao && temErro
+              ? Number((item.previsao - erro).toFixed(1))
+              : null;
 
-        const previsaoMax = temPrevisao && temErro
-          ? Number((item.previsao + erro).toFixed(1))
-          : null;
+            const previsaoMax = temPrevisao && temErro
+              ? Number((item.previsao + erro).toFixed(1))
+              : null;
 
-        return {
-          ...item,
-          previsaoMin,
-          previsaoMax,
-          faixaErro: (previsaoMin !== null && previsaoMax !== null)
-            ? [previsaoMin, previsaoMax]
-            : null,
-          cotaInundacao // mesmo valor repetido em todos os pontos
-        };
-      });
+            return {
+              ...item,
+              previsaoMin,
+              previsaoMax,
+              faixaErro: (previsaoMin !== null && previsaoMax !== null)
+                ? [previsaoMin, previsaoMax]
+                : null,
+              cotaInundacao
+            };
+          });
 
         setData(listaUnificada);
         setLoading(false);
@@ -152,147 +191,139 @@ export default function ChartNivel({ estacaoSelecionada }) {
   }
 
   return (
-    <div style={{ width: "100%", height: "100%", minHeight: "200px" }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={data}
-          margin={{ top: 10, right: 30, left: 10, bottom: 25 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+    <div style={{ width: "100%", height: "100%", minHeight: "200px", position: "relative" }}>
+     <div
+    ref={chartRef}
+    style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden"
+    }}
+>
+        <div style={{ display: "flex", flexDirection: "column", padding: "4px 4px 0 4px" }}>
+          <span style={{ fontSize: "18px", fontWeight: "700", color: "#2A3D59" }}>
+            {estacaoSelecionada.nome}
+          </span>
+          <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#718096", fontWeight: "600" }}>
+            {titulo}
+          </span>
+        </div>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={data}
+            margin={{ top: 10, right: 30, left: 5, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
 
-          <XAxis
-            dataKey="timestamp"
-            type="number"
-            domain={['dataMin', 'dataMax']}
-            ticks={ticks12h}
-            tickFormatter={(value) => {
-              const d = new Date(value);
-              return isNaN(d.getTime())
-                ? ""
-                : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-            }}
-            label={{
-              value: "Data",
-              position: "insideBottom",
-              offset: -10,
-              dy: 5,
-              style: { fill: "#5f5f5fff", fontWeight: "600", fontSize: "16px" }
-            }}
-          />
+           <XAxis
+          dataKey="timestamp"
+          type="number"
+          domain={['dataMin', 'dataMax']}
+          interval={0}       
+          tickCount={12}
+          ticks={ticks12h}
+     
+          tick={({ x, y, payload }) => {
+            const d = new Date(payload.value);
+            if (isNaN(d.getTime())) return null;
 
-          <YAxis
-            tickCount={8}
-            allowDecimals={false}
-            domain={([dataMin, dataMax]) => {
-              const valores = [
-                dataMin,
-                dataMax,
-                cotaInundacao,
-              ].filter(v => v !== null && v !== undefined);
+            const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+            const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-              const minimo = Math.min(...valores);
-              const maximo = Math.max(...valores);
+            return (
+              <g transform={`translate(${x},${y + 7})`}>
+                <text textAnchor="middle" fill="#666" fontSize="14px">
+                  <tspan x="0" dy="10">{data}</tspan>
+                  <tspan x="0" dy="14" fontSize="12px" fill="#888">{hora}</tspan>
+                </text>
+              </g>
+            );
+          }}
+        
+        />
 
-              const margem = (maximo - minimo) * 0.15;
+            <YAxis
+              tickCount={8}
+              allowDecimals={false}
+              tick={({ x, y, payload }) => (
+    <text x={x - 5} y={y + 4} textAnchor="end" fontSize="14px" fill="#5f5f5f">
+      {payload.value}
+    </text>)}
+              domain={([dataMin, dataMax]) => {
+                const valores = [
+                  dataMin,
+                  dataMax,
+                  cotaInundacao,
+                ].filter(v => v !== null && v !== undefined);
 
-              const min = Math.floor((minimo - margem) / 5) * 5;
-              const max = Math.ceil((maximo + margem) / 5) * 5;
+                const minimo = Math.min(...valores);
+                const maximo = Math.max(...valores);
 
-              return [min, max];
-          }}>
-            <Label
-              value="Nível (cm)"
-              angle={-90}
-              position="insideLeft"
-              style={{ textAnchor: "middle", fill: "#5f5f5fff", fontWeight: "600", fontSize: "16px" }}
+                const margem = (maximo - minimo) * 0.15;
+
+                const min = Math.floor((minimo - margem) / 5) * 5;
+                const max = Math.ceil((maximo + margem) / 5) * 5;
+
+                return [min, max];
+              }}>
+              <Label
+                value="Nível (cm)"
+                angle={-90}
+                position="insideLeft"
+                style={{ textAnchor: "middle", fill: "#5f5f5fff", fontWeight: "600", fontSize: "14px" }}
+              />
+            </YAxis>
+
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload || payload.length === 0) return null;
+
+                const d = new Date(label);
+                const dataFormatada = isNaN(d.getTime())
+                  ? label
+                  : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+                const visiveis = payload.filter(
+                  ({ dataKey }) =>
+                    !["previsaoMin", "previsaoMax", "faixaErro"].includes(dataKey)
+                );
+
+                return (
+                  <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 4, padding: "8px 12px", fontSize: 13 }}>
+                    <p style={{ margin: 0, fontWeight: 600 }}>{`Data: ${dataFormatada}`}</p>
+                    {visiveis.map((p) => (
+                      <p key={p.dataKey} style={{ margin: 0, color: p.color }}>
+                        {`${p.name}: ${p.value !== null && p.value !== undefined ? `${p.value} cm` : "Ausente"}`}
+                      </p>
+                    ))}
+                    {erroMedio !== null && (
+                      <p style={{ margin: 0, color: "#999" }}>{`± ${erroMedio} cm de margem de erro`}</p>
+                    )}
+                  </div>
+                );
+              }}
             />
-          </YAxis>
 
-          <Tooltip
-            content={({ active, payload, label }) => {
-              if (!active || !payload || payload.length === 0) return null;
+            <Legend
+              layout="horizontal"
+              align="center"
+              verticalAlign="top"
+              iconType="circle"
+              iconSize={10}
+              wrapperStyle={{ paddingBottom: "15px", fontSize: "13px", fontWeight: "600", color: "#2A3D59" }}
+            />
 
-              const d = new Date(label);
-              const dataFormatada = isNaN(d.getTime())
-                ? label
-                : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-
-              // esconde as séries auxiliares usadas só para desenhar a faixa
-              const visiveis = payload.filter(
-                ({ dataKey }) =>
-                  !["previsaoMin", "previsaoMax", "faixaErro"].includes(dataKey)
-              );
-
-              return (
-                <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 4, padding: "8px 12px", fontSize: 13 }}>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{`Data: ${dataFormatada}`}</p>
-                  {visiveis.map((p) => (
-                    <p key={p.dataKey} style={{ margin: 0, color: p.color }}>
-                      {`${p.name}: ${p.value !== null && p.value !== undefined ? `${p.value} cm` : "Ausente"}`}
-                    </p>
-                  ))}
-                  {erroMedio !== null && (
-                    <p style={{ margin: 0, color: "#999" }}>{`± ${erroMedio} cm de margem de erro`}</p>
-                  )}
-                </div>
-              );
-            }}
-          />
-
-          <Legend
-            layout="horizontal"
-            align="center"
-            verticalAlign="top"
-            iconType="circle"
-            iconSize={10}
-            wrapperStyle={{ paddingBottom: "15px", fontSize: "13px", fontWeight: "600", color: "#2A3D59" }}
-          />
-
-        <Line
-          type="monotone"
-          dataKey="observado"
-          name="Observado"
-          stroke="#ff7300"
-          strokeWidth={2.5}
-          dot={false}
-          connectNulls={true}
-        />
-
-        <Line
-          type="linear"
-          dataKey="previsao"
-          name="Previsão"
-          stroke="#2A3D59"
-          strokeWidth={2.5}
-          dot={false}
-          connectNulls={true}
-        />
-
-        <Area
-          type="monotone"
-          dataKey="faixaErro"
-          name="Erro médio"
-          stroke="none"
-          fill="#808080"
-          fillOpacity={0.25}
-          legendType="rect"
-          connectNulls={true}
-          isAnimationActive={false}
-        />
-
-        <Line
-          type="linear"
-          dataKey="cotaInundacao"
-          name="Cota de Inundação"
-          stroke="#2e7d32"
-          strokeWidth={2}
-          dot={false}
-          activeDot={false}
-          connectNulls={true}
-          isAnimationActive={false}
-        />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Line type="monotone" dataKey="observado" name="Observado" stroke="#ff7300" strokeWidth={2.5} dot={false} connectNulls={true} />
+            <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
+            <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
+            <Line type="linear" dataKey="cotaInundacao" name="Cota de Inundação" stroke="#2e7d32" strokeWidth={2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
-}
+});
+
+export default ChartNivel;

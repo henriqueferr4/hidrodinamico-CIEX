@@ -8,7 +8,16 @@ import LayerMalha from "./layers/layerMalha"
 import { useState, useEffect, useRef } from "react";
 import Map, { NavigationControl } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { Download } from "lucide-react";
+import { X } from 'lucide-react';
 
+// Título de cada gráfico, por variável ativa
+const TITULOS_VARIAVEL = {
+  nivel: "Previsão de Nível",
+  vento: "Vento",
+  corrente: "Corrente",
+  vazao: "Vazão"
+};
 
 export default function MapView({
   style,
@@ -21,6 +30,8 @@ export default function MapView({
   fonteDados
 }) {
   const mapRef = useRef();
+  const chartApiRef = useRef(null);
+
 
   useEffect(() => {
     setTimeout(() => {
@@ -63,6 +74,8 @@ export default function MapView({
           .then(setGeojsonVazao);
   }, []);
   
+  const tituloGrafico = TITULOS_VARIAVEL[variavelAtiva] ?? "";
+
   return (
     <div style={{ position: "absolute", inset: 0 }}>
       <Map
@@ -139,55 +152,96 @@ export default function MapView({
             position: "absolute",
             zIndex: 1010, 
             left: `${posicaoPixel.x - 5}px`,
-            top: `${posicaoPixel.y - 320}px`,
+            top: `${posicaoPixel.y - 340}px`,
             width: "800px",
-            height: "300px",
+            height: "320px",
             background: "rgba(255, 255, 255, 0.88)", 
             backdropFilter: "blur(10px)",
             border: "1px solid rgba(255, 255, 255, 0.4)",
             borderRadius: "16px",
-            padding: "16px",
+            padding: "16px 16px 16px 16px ",
             boxShadow: "0 10px 30px rgba(42, 61, 89, 0.2)",
             display: "flex",
             flexDirection: "column",
             fontFamily: "system-ui, -apple-system, sans-serif",
-            pointerEvents: "auto"
+            pointerEvents: "auto",
+            boxSizing: "border-box"
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#718096", fontWeight: "600" }} />
-              <span style={{ fontSize: "18px", fontWeight: "700", color: "#2A3D59" }}>
-                {estacaoSelecionada.nome}
-              </span>
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "center", 
+            marginBottom: "2px", 
+            flexShrink: 0 
+          }}
+          >
+
+
+          <div
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            display: "flex",
+            gap: "8px",
+            zIndex: 1000,
+          }}
+        >
+              <button
+                onClick={() => chartApiRef.current?.baixarGrafico()}
+                title="Baixar gráfico (PNG)"
+                style={{
+                  background: "rgba(42, 61, 89, 0.1)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2A3D59",
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(42, 61, 89, 0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(42, 61, 89, 0.1)"}
+              >
+                <Download size={13} />
+              </button>
+
+              <button
+                onClick={() => setEstacaoSelecionada(null)}
+                title="Fechar"
+                style={{
+                  background: "rgba(42, 61, 89, 0.1)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#2A3D59",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(42, 61, 89, 0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(42, 61, 89, 0.1)"}
+              >
+                <X size={13} />
+              </button>
             </div>
-            
-            <button
-              onClick={() => setEstacaoSelecionada(null)}
-              style={{
-                background: "rgba(42, 61, 89, 0.1)",
-                border: "none",
-                borderRadius: "50%",
-                width: "24px",
-                height: "24px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#2A3D59",
-                fontWeight: "bold",
-                fontSize: "12px",
-                transition: "background 0.2s"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(225, 62, 62, 0.2)"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(42, 61, 89, 0.1)"}
-            >
-              ✕
-            </button>
           </div>
 
-          <div style={{ flexGrow: 1, width: "100%", height: "80%" }}>
-            <ChartNivel estacaoSelecionada={estacaoSelecionada} />
+          <div style={{ flexGrow: 1, width: "100%", height: "100%", minHeight: 0 }}>
+            <ChartNivel
+                ref={chartApiRef}
+                estacaoSelecionada={estacaoSelecionada}
+                titulo={tituloGrafico}
+            />
           </div>
         </div>
       )}

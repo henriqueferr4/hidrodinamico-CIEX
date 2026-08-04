@@ -1,6 +1,6 @@
 import "./ChartContainer.css";
 
-export default function ChartContainer({ title, updatedAt, children }) {
+export default function ChartContainer({ title, updatedAt, children, onDownload,}) {
   return (
     <div className="chart-wrapper">
       
