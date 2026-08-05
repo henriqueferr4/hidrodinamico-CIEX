@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Source, Layer, Marker } from "react-map-gl/mapbox";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 const STATIONS = [
   { id: 1, nome: "FURG - CCMAR", latitude: -32.02738, longitude: -52.10208 },
@@ -23,6 +25,8 @@ export default function LayerNivel({
   const [maxTimeStep, setMaxTimeStep] = useState(70); // ajuste se souber o valor exato
 
   const tickInterval = 24;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const ticks = [];
   for (let i = 0; i <= maxTimeStep; i += tickInterval) {
@@ -90,6 +94,8 @@ export default function LayerNivel({
       })
       .catch((err) => console.error("Erro ao iniciar timeline de nível:", err));
   }, []);
+
+  
   return (
     <>
       {/* ESTAÇÕES */}
@@ -134,32 +140,32 @@ export default function LayerNivel({
       <div
         style={{
           position: "absolute",
-          right: "20px",
+          right: isMobile ? "10px" : "20px",
           top: "20px",
           zIndex: 1000,
           background: "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(8px)",
           border: "1px solid rgba(255, 255, 255, 0.4)",
-          padding: "12px 14px",
+          padding: isMobile ? "8px 10px" : "12px 14px",
           borderRadius: "12px",
           boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
           fontFamily: "system-ui, -apple-system, sans-serif"
         }}
       >
-        <div style={{ fontSize: "12px", fontWeight: "700", textAlign: "center", marginBottom: "10px", color: "#2A3D59" }}>
+        <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", textAlign: "center", marginBottom: isMobile ? "6px" : "10px", color: "#2A3D59" }}>
           Nível (cm)
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px" }}>
           <div
             style={{
-              width: "14px",
-              height: "300px",
+              width: isMobile ? "10px" : "14px",
+              height: isMobile ? "160px" : "300px",
               borderRadius: "4px",
               background: "linear-gradient(to top, #440154, #443983, #31688E, #21908C, #20A387, #35B779, #4EA53B, #B4DE2C, #FDE725, #F8961E, #DC2F02)",
               border: "1px solid rgba(42, 61, 89, 0.15)"
             }}
           />
-          <div style={{ height: "300px", display: "flex", flexDirection: "column", justifyContent: "space-between", fontSize: "11px", fontWeight: "600", color: "#2A3D59" }}>
+          <div style={{ height: isMobile ? "160px" : "300px", display: "flex", flexDirection: "column", justifyContent: "space-between", fontSize: isMobile ? "9px" : "11px", fontWeight: "600", color: "#2A3D59" }}>
             <span>200</span>
             <span></span>
             <span>150</span>
@@ -179,15 +185,15 @@ export default function LayerNivel({
       <div
         style={{
           position: "absolute",
-          bottom: "20px",
+          bottom: isMobile ? "10px" : "20px",
           left: "50%",
           transform: "translateX(-50%)",
-          width: "65%",
-          minWidth: "400px",
+          width: isMobile ? "92%" : "65%",
+          minWidth: isMobile ? "0" : "400px",
           zIndex: 1000,
           background: "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(8px)",
-          padding: "10px 18px",
+          padding: isMobile ? "8px 12px" : "10px 18px",
           borderRadius: "12px",
           boxShadow: "0 10px 30px rgba(42, 61, 89, 0.15)",
           border: "1px solid rgba(42, 61, 89, 0.1)",
@@ -198,15 +204,15 @@ export default function LayerNivel({
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px" }}>
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               style={{
                 background: "#2A3D59",
                 border: "none",
                 borderRadius: "50%",
-                width: "32px",
-                height: "32px",
+                width: isMobile ? "26px" : "32px",
+                height: isMobile ? "26px" : "32px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -215,20 +221,20 @@ export default function LayerNivel({
               }}
             >
               {isPlaying ? (
-                <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+                <svg width={isMobile ? "8" : "10"} height={isMobile ? "10" : "12"} viewBox="0 0 10 12" fill="none">
                   <path d="M2 1V11M8 1V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               ) : (
-                <svg width="12" height="14" viewBox="0 0 12 14" fill="none" style={{ marginLeft: "2px" }}>
+                <svg width={isMobile ? "10" : "12"} height={isMobile ? "12" : "14"} viewBox="0 0 12 14" fill="none" style={{ marginLeft: "2px" }}>
                   <path d="M1.5 1.75V12.25L9.75 7L1.5 1.75Z" fill="white" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
               )}
             </button>
-            <span style={{ fontSize: "15px", fontWeight: "700", color: "#2A3D59" }}>
+            <span style={{ fontSize: isMobile ? "12px" : "15px", fontWeight: "700", color: "#2A3D59" }}>
               {dataFormatada || "..."}
             </span>
           </div>
-          <span style={{ fontSize: "12px", fontWeight: "600", background: "rgba(42, 61, 89, 0.1)", color: "#2A3D59", padding: "4px 10px", borderRadius: "20px" }}>
+          <span style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "600", background: "rgba(42, 61, 89, 0.1)", color: "#2A3D59", padding: isMobile ? "3px 8px" : "4px 10px", borderRadius: "20px" }}>
             + {timeStep}h
           </span>
         </div>
@@ -244,7 +250,7 @@ export default function LayerNivel({
             style={{ width: "100%", cursor: "pointer", accentColor: "#2A3D59" }}
           />
 
-          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: isMobile ? "4px" : "8px" }}>
             {ticks.map((tick) => {
               let textoMarcador = tick === 0 ? "Início" : `+${tick}h`;
 
@@ -257,7 +263,7 @@ export default function LayerNivel({
               }
 
               return (
-                <div key={tick} style={{ display: "flex", flexDirection: "column", alignItems: "center", fontSize: "11px", color: timeStep >= tick ? "#2A3D59" : "#A0AEC0" }}>
+                <div key={tick} style={{ display: "flex", flexDirection: "column", alignItems: "center", fontSize: isMobile ? "9px" : "11px", color: timeStep >= tick ? "#2A3D59" : "#A0AEC0" }}>
                   <div style={{ width: "2px", height: "5px", background: timeStep >= tick ? "#2A3D59" : "#CBD5E0", marginBottom: "4px" }} />
                   {textoMarcador}
                 </div>

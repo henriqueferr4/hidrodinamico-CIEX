@@ -9,6 +9,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 import WaterIcon from "@mui/icons-material/Water";
 import WavesIcon from "@mui/icons-material/Waves";
@@ -28,6 +30,8 @@ import ChangeHistoryIcon from "@mui/icons-material/ChangeHistory";
 
 export default function Sidebar({ activeView, setActiveView, open, setOpen, variavelAtiva, setVariavelAtiva, fonteDados, setFonteDados }) {
   
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const drawerWidth = open ? 240 : 80;
 
@@ -68,12 +72,9 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
         }}
       >
         <Toolbar
-          sx={{
-            display: "flex",
-            justifyContent: open ? "flex-end" : "center",
-            
-          }}
+          sx={{ display: "flex", justifyContent: open ? "flex-end" : "center" }}
         >
+          {!isMobile && (
           <IconButton onClick={() => {
                                         if (open) {
                                           setOpen(false);
@@ -89,6 +90,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
             }}>
             {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
+          )}
         </Toolbar>
 
         <Box

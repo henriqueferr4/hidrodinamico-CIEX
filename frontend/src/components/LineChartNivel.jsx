@@ -13,6 +13,8 @@ import {
 } from "recharts";
 
 import * as htmlToImage from "html-to-image";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 const SENSOR_POR_ID = {
   1: "FURG_CCMAR",
@@ -30,7 +32,7 @@ const COTA_INUNDACAO_POR_ID = {
   5: 280   // Itapua
 };
 
-const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
+  const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   const chartRef = useRef(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,10 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
         })
         .map((item) => item.timestamp)
     : [];
+  const ticksMobile = ticks12h.filter((_, i) => i % 2 === 0);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const baixarGrafico = async () => {
     if (!chartRef.current) return;
@@ -222,8 +228,8 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
           type="number"
           domain={['dataMin', 'dataMax']}
           interval={0}       
-          tickCount={12}
-          ticks={ticks12h}
+          tickCount={isMobile ? 6 : 12}
+          ticks={isMobile ? ticksMobile : ticks12h}
      
           tick={({ x, y, payload }) => {
             const d = new Date(payload.value);

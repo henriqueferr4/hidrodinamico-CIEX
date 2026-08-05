@@ -1,13 +1,28 @@
-/* container das logos */
 .logos {
   display: flex;
   gap: 10px;
   pointer-events: auto;
 }
 
-/* imagens */
 .logos img {
   height: 60px;
   padding: 6px;
   object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .logos {
+    gap: 4px;
+  }
+  .logos img {
+    height: 32px;
+    padding: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logos img {
+    height: 28px;
+    padding: 2px;
+  }
 }

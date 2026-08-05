@@ -16,16 +16,16 @@ export default function Header({ open, drawerWidth }) {
         zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
-      <Toolbar>
+      <Toolbar sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         <Typography variant="subtitle1"
-            sx={{
-              fontWeight: 600,
-              color: "#ffffff",
-              fontSize: "1.5rem",
-              lineHeight: 1.2,
-              flexGrow: 1 }}>
-          Previsão e Monitoramento Hidrodinâmico
-        </Typography>
+        sx={{
+          fontWeight: 600,
+          color: "#ffffff",
+          fontSize: { xs: "1rem", sm: "1.2rem", md: "1.5rem" },
+          lineHeight: 1.2,
+          flexGrow: 1 }}>
+      Previsão e Monitoramento Hidrodinâmico
+    </Typography>
 
         <Box>
           

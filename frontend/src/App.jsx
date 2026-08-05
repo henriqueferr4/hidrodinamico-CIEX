@@ -5,11 +5,15 @@ import "./components/Modal.css";
 import ChartNivel from "./components/LineChartNivel";
 import ChartContainer from "./components/ChartContainer";
 import MapView from "./components/MapView";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 Modal.setAppElement("#root");
 
 function App() {
   // Controla telas internas do dashboard (inicia direto em "nivel")
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [modalAberto, setModalAberto] = useState(false);
   const [activeView, setActiveView] = useState("nivel");
   const [timeStep, setTimeStep] = useState(0);
@@ -21,6 +25,12 @@ function App() {
   useEffect(() => {
     setModalAberto(true);
   }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   return (
       // Modal: tela de aviso inicial com informações sobre a ferramenta
