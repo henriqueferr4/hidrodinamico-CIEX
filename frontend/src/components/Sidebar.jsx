@@ -33,7 +33,8 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const drawerWidth = open ? 240 : 80;
+  const drawerWidth = isMobile ? 240 : (open ? 240 : 80);
+  const effectiveOpen = isMobile ? true : open;
 
   const menuItems = [ { label: "Nível", value: "nivel", icon: <WaterIcon />, }, 
     { label: "Vazão", value: "vazao", icon: <SouthEastIcon />, }, 
@@ -55,19 +56,42 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
 
     return (
     <>
+        {isMobile && !open && (
+        <IconButton
+          onClick={() => setOpen(true)}
+          sx={{
+            position: "fixed",
+            top: 64, // ajuste conforme a altura do seu Header mobile
+            left: 10,
+            zIndex: (theme) => theme.zIndex.drawer + 2, // acima do próprio Drawer
+            backgroundColor: "#1f2937",
+            color: "#ffffff",
+            width: 40,
+            height: 40,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            "&:hover": { backgroundColor: "#374151" },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+      )}
+      
       <Drawer
-        variant="permanent"
+        variant={isMobile ? "temporary" : "permanent"}
+        open={isMobile ? open : true}
+        onClose={() => setOpen(false)}
+        ModalProps={{ keepMounted: true }} // melhora performance ao reabrir no mobile
         sx={{
-          width: drawerWidth,
+          width: isMobile ? 0 : drawerWidth,   // não reserva espaço fixo no mobile
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: drawerWidth,
+            width: isMobile ? 240 : drawerWidth,  // no mobile sempre abre "expandido" (240px), já que é só overlay
             overflowX: "hidden",
             transition: "width 0.3s",
             boxSizing: "border-box",
             backgroundColor: "#1f2937",
-            color: "ffffff",
-            pt: "60px",
+            color: "#ffffff",
+            pt: isMobile ? "56px" : "60px", // ajusta pra ficar abaixo do Header mobile
           },
         }}
       >
@@ -122,6 +146,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
             onClick={() => {
     setFonteDados("previsao");
     setVariavelAtiva(item.value);
+    if (isMobile) setOpen(false);
 }}
             sx={{ 
               mx: 1, 

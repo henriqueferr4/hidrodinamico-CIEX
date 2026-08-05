@@ -1,7 +1,9 @@
 import { useState } from "react";
-import Header from "../components/Header";   // Certifique-se de que as importações do Header e Sidebar estão aqui
+import Header from "../components/Header"; 
 import Sidebar from "../components/Sidebar";
 import { Box, Toolbar } from "@mui/material";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 export default function MainLayout({
   children,
@@ -15,18 +17,24 @@ export default function MainLayout({
   setFonteDados
 }) {
   
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const drawerWidth = sidebarOpen ? 240 : 80;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw" }}>
+    <Box sx={{ 
+      display: "flex", 
+      flexDirection: "column", 
+      height: "100vh", 
+      width: "100vw" }}>
 
       <Header drawerWidth={drawerWidth} />
 
       <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", position: "relative" }}>
 
       <Box 
-          sx={{ 
-            width: drawerWidth, 
+            sx={{ 
+            width: isMobile ? 0 : drawerWidth, 
             flexShrink: 0,
             height: "100%",
             pt: "64px" 
@@ -60,7 +68,8 @@ export default function MainLayout({
           sx={{
             flexGrow: 1,
             position: "relative",
-            overflow: "hidden"
+            overflow: "hidden",
+            
           }}
         >
           {children}

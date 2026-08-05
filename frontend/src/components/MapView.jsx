@@ -98,7 +98,7 @@ export default function MapView({
         mapStyle="mapbox://styles/mapbox/light-v11"
         style={{ position: "absolute", inset: 0 }}
       >
-        <NavigationControl position="top-left" />
+        {!isMobile ? <NavigationControl position="top-left" /> : null}
 
         {/* 1. Camada de Nível */}
         {variavelAtiva === "nivel" && (
