@@ -40,7 +40,7 @@ function App() {
         isOpen={modalAberto}
         onRequestClose={() => setModalAberto(false)}
       >
-        <h2 className="modal-titulo">Dashboard de Monitoramento e Previsão Hidrodinânica</h2>
+        <h2 className="modal-titulo">Previsão Hidrodinânica</h2>
         <br></br>
 
         <p className="modal-texto">Este painel integra as ferramentas do Centro Interinstitucional de Observação e Previsão de Eventos Extremos (CIEX). 

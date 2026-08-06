@@ -24,7 +24,7 @@ export default function Header({ open, drawerWidth }) {
           fontSize: { xs: "1rem", sm: "1.2rem", md: "1.5rem" },
           lineHeight: 1.2,
           flexGrow: 1 }}>
-      Previsão e Monitoramento Hidrodinâmico
+      Previsão Hidrodinâmica
     </Typography>
 
         <Box>
