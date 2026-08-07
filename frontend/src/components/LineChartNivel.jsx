@@ -29,7 +29,7 @@ const COTA_INUNDACAO_POR_ID = {
   2: 148,  // S_Lourenco
   3: 225,  // Arambare
   4: 80,  // S_Jose_Norte
-  5: 280   // Itapua
+
 };
 
   const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
