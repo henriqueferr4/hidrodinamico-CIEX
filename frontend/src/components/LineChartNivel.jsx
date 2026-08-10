@@ -29,8 +29,12 @@ const COTA_INUNDACAO_POR_ID = {
   2: 148,  // S_Lourenco
   3: 225,  // Arambare
   4: 80,  // S_Jose_Norte
+  5: 280, // Itapuã
 
 };
+
+// EStações que não devem plotar linha da cta de inundação no gráfico
+const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
 
   const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   const chartRef = useRef(null);
@@ -38,6 +42,7 @@ const COTA_INUNDACAO_POR_ID = {
   const [loading, setLoading] = useState(false);
   const [erroMedio, setErroMedio] = useState(null);
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
+  const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
 
   const ticks12h = data && data.length > 0
     ? data
@@ -324,7 +329,7 @@ const COTA_INUNDACAO_POR_ID = {
             <Line type="monotone" dataKey="observado" name="Observado" stroke="#ff7300" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
-            <Line type="linear" dataKey="cotaInundacao" name="Cota de Inundação" stroke="#2e7d32" strokeWidth={2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false} />
+            <Line type="linear" dataKey="cotaInundacao" name="Cota de Inundação" stroke="#2e7d32" strokeWidth={2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false} strokeOpacity={ocultarLinhaCota ? 0 : 1}/>
           </ComposedChart>
         </ResponsiveContainer>
       </div>
