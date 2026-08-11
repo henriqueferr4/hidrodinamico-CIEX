@@ -258,15 +258,21 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
             <YAxis
               tickCount={8}
               allowDecimals={false}
+              allowDataOverflow={true}
               tick={({ x, y, payload }) => (
     <text x={x - 5} y={y + 4} textAnchor="end" fontSize="14px" fill="#5f5f5f">
       {payload.value}
     </text>)}
-              domain={([dataMin, dataMax]) => {
-                const valores = [
-                  dataMin,
-                  dataMax,
-                ].filter(v => v !== null && v !== undefined);
+                domain={() => {
+                 const valores = data
+                  .flatMap((item) => [
+                    item.observado,
+                    item.previsao,
+                    ocultarLinhaCota ? null : item.cotaInundacao,
+                  ])
+                  .filter((v) => v !== null && v !== undefined);
+
+                if (valores.length === 0) return [0, 100];
 
                 const minimo = Math.min(...valores);
                 const maximo = Math.max(...valores);
@@ -328,8 +334,21 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
             <Line type="monotone" dataKey="observado" name="Observado" stroke="#ff7300" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
-            <Line type="linear" dataKey="cotaInundacao" name="Cota de Inundação" stroke="#2e7d32" strokeWidth={2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false} strokeOpacity={ocultarLinhaCota ? 0 : 1}/>
-          </ComposedChart>
+            {!ocultarLinhaCota && (
+  <Line
+    type="linear"
+    dataKey="cotaInundacao"
+    name="Cota de Inundação"
+    stroke="#2e7d32"
+    strokeWidth={2}
+    dot={false}
+    activeDot={false}
+    connectNulls={true}
+    isAnimationActive={false}
+    strokeOpacity={ocultarLinhaCota ? 0 : 1}
+  />
+)}
+            </ComposedChart>
         </ResponsiveContainer>
       </div>
     </div>
