@@ -266,7 +266,6 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
                 const valores = [
                   dataMin,
                   dataMax,
-                  cotaInundacao,
                 ].filter(v => v !== null && v !== undefined);
 
                 const minimo = Math.min(...valores);
