@@ -75,7 +75,7 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
           // para dentro da nova área, senão ele fica grudado no canto
           transform: `translate(${PADDING}px, ${PADDING}px)`,
           transformOrigin: "top left",
-          // opcional: garante que o fundo cubra a área toda
+     
           width: `${width}px`,
           height: `${height}px`,
         },
@@ -302,9 +302,9 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
                   : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
                 const visiveis = payload.filter(
-                  ({ dataKey }) =>
-                    !["previsaoMin", "previsaoMax", "faixaErro"].includes(dataKey)
-                );
+      ({ dataKey }) =>
+        !["previsaoMin", "previsaoMax", "faixaErro", "cotaInundacao"].includes(dataKey)
+    );
 
                 return (
                   <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 4, padding: "8px 12px", fontSize: 13 }}>
@@ -314,6 +314,20 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
                         {`${p.name}: ${p.value !== null && p.value !== undefined ? `${p.value} cm` : "Ausente"}`}
                       </p>
                     ))}
+
+                    {cotaInundacao !== null && (
+          <p
+            style={{
+              margin: 0,
+              color: "#2e7d32",
+              fontWeight: 400,
+            }}
+          >
+            {`Cota de Inundação: ${cotaInundacao} cm`}
+          </p>
+        )}
+
+
                     {erroMedio !== null && (
                       <p style={{ margin: 0, color: "#999" }}>{`± ${erroMedio} cm de margem de erro`}</p>
                     )}
@@ -323,31 +337,38 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
             />
 
             <Legend
-              layout="horizontal"
-              align="center"
-              verticalAlign="top"
-              iconType="circle"
-              iconSize={10}
-              wrapperStyle={{ paddingBottom: "15px", fontSize: "13px", fontWeight: "600", color: "#2A3D59" }}
-            />
+            layout="horizontal"
+            align="center"
+            verticalAlign="top"
+            iconType="circle"
+            iconSize={10}
+            wrapperStyle={{ paddingBottom: "15px", fontSize: "13px", fontWeight: "600", color: "#2A3D59" }}
+            payload={[
+              { value: "Observado", type: "circle", color: "#ff7300" },
+              { value: "Previsão", type: "circle", color: "#2A3D59" },
+              { value: "Erro médio", type: "rect", color: "#808080" },
+              ...(cotaInundacao !== null
+                ? [{ value: `Cota de Inundação: ${cotaInundacao} cm`, type: "none", color: "#2e7d32" }]
+                : [])
+            ]}
+          />
 
             <Line type="monotone" dataKey="observado" name="Observado" stroke="#ff7300" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
             {!ocultarLinhaCota && (
-  <Line
-    type="linear"
-    dataKey="cotaInundacao"
-    name="Cota de Inundação"
-    stroke="#2e7d32"
-    strokeWidth={2}
-    dot={false}
-    activeDot={false}
-    connectNulls={true}
-    isAnimationActive={false}
-    strokeOpacity={ocultarLinhaCota ? 0 : 1}
-  />
-)}
+            <Line
+            type="linear"
+            dataKey="cotaInundacao"
+            name="Cota de Inundação"
+            stroke="#2e7d32"
+            strokeWidth={2}
+            dot={false}
+            activeDot={false}
+            connectNulls={true}
+            isAnimationActive={false}
+          />
+          )}
             </ComposedChart>
         </ResponsiveContainer>
       </div>
