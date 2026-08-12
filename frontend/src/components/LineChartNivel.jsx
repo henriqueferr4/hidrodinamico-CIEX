@@ -21,7 +21,8 @@ const SENSOR_POR_ID = {
   2: "S_Lourenco",
   3: "Arambare",
   4: "S_Jose_Norte",
-  5: "Itapua"
+  5: "Itapua",
+  6: "Laranjal"
 };
 
 const COTA_INUNDACAO_POR_ID = {
@@ -34,7 +35,7 @@ const COTA_INUNDACAO_POR_ID = {
 };
 
 // EStações que não devem plotar linha da cta de inundação no gráfico
-const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
+const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
 
   const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   const chartRef = useRef(null);
@@ -44,15 +45,36 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5];
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
 
-  const ticks12h = data && data.length > 0
-    ? data
-        .filter((item) => {
-          if (!item || !item.timestamp) return false;
-          const d = new Date(item.timestamp);
-          return !isNaN(d.getTime()) && d.getHours() === 12 && d.getMinutes() === 0;
-        })
-        .map((item) => item.timestamp)
-    : [];
+  const ticks12h = (() => {
+    if (!data || data.length === 0) return [];
+
+    const timestamps = data
+      .map((item) => item.timestamp)
+      .filter((ts) => ts !== null && ts !== undefined && !isNaN(ts));
+
+    if (timestamps.length === 0) return [];
+
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+
+    const ticks = [];
+    const cursor = new Date(minTs);
+    cursor.setHours(12, 0, 0, 0);
+
+    // se o meio-dia calculado já ficou antes do início real dos dados,
+    // avança pro próximo dia para não gerar tick fora do domínio
+    if (cursor.getTime() < minTs) {
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    while (cursor.getTime() <= maxTs) {
+      ticks.push(cursor.getTime());
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return ticks;
+  })();
+
   const ticksMobile = ticks12h.filter((_, i) => i % 2 === 0);
   
   const theme = useTheme();
