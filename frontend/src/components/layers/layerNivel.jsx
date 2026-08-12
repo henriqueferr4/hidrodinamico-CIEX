@@ -5,7 +5,7 @@ import { useTheme } from "@mui/material/styles";
 
 const STATIONS = [
   { id: 1, nome: "FURG - CCMAR", latitude: -32.02738, longitude: -52.10208 },
-  { id: 2, nome: "S. Lourenço do Sul", latitude: -31.36905, longitude: -51.96128 },
+  { id: 2, nome: "São Lourenço do Sul", latitude: -31.36905, longitude: -51.96128 },
   { id: 3, nome: "Arambaré", latitude: -30.90649, longitude: -51.49224 },
   { id: 4, nome: "São José do Norte", latitude: -32.01310, longitude: -52.04398 },
   { id: 5, nome: "Itapuã", latitude: -30.38512, longitude: -51.05926 },
@@ -119,6 +119,23 @@ export default function LayerNivel({
             }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
           >
+          <div
+          style={{
+            background: "rgba(255, 255, 255, 0.9)",
+            color: "#2A3D59",
+            padding: isMobile ? "2px 5px" : "3px 7px",
+            borderRadius: "5px",
+            fontSize: isMobile ? "8px" : "13px",
+            fontWeight: "700",
+            whiteSpace: "nowrap",
+            marginBottom: "4px",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+            border: "1px solid rgba(42, 61, 89, 0.15)",
+            pointerEvents: "none"
+          }}
+        >
+          {station.nome}
+        </div>
             <div
               style={{
                 width: estacaoSelecionada?.id === station.id ? "24px" : "16px",
