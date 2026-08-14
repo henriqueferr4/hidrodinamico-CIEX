@@ -22,7 +22,7 @@ const SENSOR_POR_ID = {
   3: "Arambare",
   4: "S_Jose_Norte",
   5: "Itapua",
-  6: "Laranjal"
+ // 6: "Laranjal"
 };
 
 const COTA_INUNDACAO_POR_ID = {

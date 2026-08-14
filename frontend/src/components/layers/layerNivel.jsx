@@ -9,7 +9,7 @@ const STATIONS = [
   { id: 3, nome: "Arambaré", latitude: -30.90649, longitude: -51.49224 },
   { id: 4, nome: "São José do Norte", latitude: -32.01310, longitude: -52.04398 },
   { id: 5, nome: "Itapuã", latitude: -30.38512, longitude: -51.05926 },
-  { id: 6, nome: "Laranjal", latitude: -31.764725, longitude: -52.226296}
+  //{ id: 6, nome: "Laranjal", latitude: -31.764725, longitude: -52.226296}
 ];
 
 export default function LayerNivel({
