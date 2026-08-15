@@ -44,6 +44,8 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
   const [erroMedio, setErroMedio] = useState(null);
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
+  const LIMIAR_GAP_OBSERVADO_MS = 60 * 60 * 1000; // 1 hora
+  const [dadosObservadoGrafico, setDadosObservadoGrafico] = useState([]);
 
   const ticks12h = (() => {
     if (!data || data.length === 0) return [];
@@ -206,6 +208,35 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
           });
 
         setData(listaUnificada);
+
+// Monta uma série exclusiva para "observado", inserindo um ponto
+// null logo após cada gap > 1h para forçar o Recharts a quebrar a linha
+const pontosObservado = listaUnificada
+  .filter((item) => item.observado !== null && item.observado !== undefined)
+  .sort((a, b) => a.timestamp - b.timestamp);
+
+const serieComQuebras = [];
+
+pontosObservado.forEach((ponto, index) => {
+  if (index > 0) {
+    const anterior = pontosObservado[index - 1];
+    const gap = ponto.timestamp - anterior.timestamp;
+
+    if (gap > LIMIAR_GAP_OBSERVADO_MS) {
+      serieComQuebras.push({
+        timestamp: anterior.timestamp + 1,
+        observado: null
+      });
+    }
+  }
+
+  serieComQuebras.push({
+    timestamp: ponto.timestamp,
+    observado: ponto.observado
+  });
+});
+
+setDadosObservadoGrafico(serieComQuebras);
         setLoading(false);
       })
       .catch((error) => {
@@ -375,7 +406,17 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
             ]}
           />
 
-            <Line type="monotone" dataKey="observado" name="Observado" stroke="#ff7300" strokeWidth={2.5} dot={false} connectNulls={true} />
+            <Line
+              type="monotone"
+              dataKey="observado"
+              data={dadosObservadoGrafico}
+              name="Observado"
+              stroke="#ff7300"
+              strokeWidth={2.5}
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
             {!ocultarLinhaCota && (
