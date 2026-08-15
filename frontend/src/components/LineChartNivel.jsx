@@ -209,34 +209,41 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
 
         setData(listaUnificada);
 
-// Monta uma série exclusiva para "observado", inserindo um ponto
-// null logo após cada gap > 1h para forçar o Recharts a quebrar a linha
+// Insere pontos de quebra (observado: null) diretamente no array
+// unificado, sempre que o intervalo entre duas leituras reais de
+// "observado" for maior que o limiar. Isso mantém TODOS os elementos
+// do gráfico (Line, Area, Tooltip) lendo do mesmo array/índices.
 const pontosObservado = listaUnificada
   .filter((item) => item.observado !== null && item.observado !== undefined)
   .sort((a, b) => a.timestamp - b.timestamp);
 
-const serieComQuebras = [];
+const pontosDeQuebra = [];
 
 pontosObservado.forEach((ponto, index) => {
-  if (index > 0) {
-    const anterior = pontosObservado[index - 1];
-    const gap = ponto.timestamp - anterior.timestamp;
+  if (index === 0) return;
 
-    if (gap > LIMIAR_GAP_OBSERVADO_MS) {
-      serieComQuebras.push({
-        timestamp: anterior.timestamp + 1,
-        observado: null
-      });
-    }
+  const anterior = pontosObservado[index - 1];
+  const gap = ponto.timestamp - anterior.timestamp;
+
+  if (gap > LIMIAR_GAP_OBSERVADO_MS) {
+    pontosDeQuebra.push({
+      timestamp: anterior.timestamp + 1,
+      dataOriginal: null,
+      observado: null,
+      previsao: null,
+      previsaoMin: null,
+      previsaoMax: null,
+      faixaErro: null,
+      cotaInundacao
+    });
   }
-
-  serieComQuebras.push({
-    timestamp: ponto.timestamp,
-    observado: ponto.observado
-  });
 });
 
-setDadosObservadoGrafico(serieComQuebras);
+const listaComQuebras = [...listaUnificada, ...pontosDeQuebra]
+  .sort((a, b) => a.timestamp - b.timestamp);
+
+setData(listaComQuebras);
+setLoading(false);
         setLoading(false);
       })
       .catch((error) => {
@@ -407,16 +414,15 @@ setDadosObservadoGrafico(serieComQuebras);
           />
 
             <Line
-              type="monotone"
-              dataKey="observado"
-              data={dadosObservadoGrafico}
-              name="Observado"
-              stroke="#ff7300"
-              strokeWidth={2.5}
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
+            type="monotone"
+            dataKey="observado"
+            name="Observado"
+            stroke="#ff7300"
+            strokeWidth={2.5}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
             {!ocultarLinhaCota && (
