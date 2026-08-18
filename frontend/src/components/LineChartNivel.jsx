@@ -22,7 +22,8 @@ const SENSOR_POR_ID = {
   3: "Arambare",
   4: "S_Jose_Norte",
   5: "Itapua",
-  6: "Laranjal"
+  6: "Tavares",
+  7: "Pelotas",
 };
 
 const COTA_INUNDACAO_POR_ID = {
@@ -35,7 +36,7 @@ const COTA_INUNDACAO_POR_ID = {
 };
 
 // EStações que não devem plotar linha da cta de inundação no gráfico
-const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
+const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7];
 
   const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   const chartRef = useRef(null);
@@ -78,6 +79,30 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
   })();
 
   const ticksMobile = ticks12h.filter((_, i) => i % 2 === 0);
+
+  const dominioPrevisao = (() => {
+  if (!data || data.length === 0) {
+    return ["auto", "auto"];
+  }
+
+  const timestampsPrevisao = data
+    .filter(
+      (item) =>
+        item.previsao !== null &&
+        item.previsao !== undefined &&
+        !isNaN(item.timestamp)
+    )
+    .map((item) => item.timestamp);
+
+  if (timestampsPrevisao.length === 0) {
+    return ["auto", "auto"];
+  }
+
+  return [
+    Math.min(...timestampsPrevisao),
+    Math.max(...timestampsPrevisao),
+  ];
+})();
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -129,9 +154,15 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
     Promise.all([
       fetch(`/data/observado_sensor_${nomeSensor}.json`).then(res => res.json()).catch(() => []),
       fetch(`/data/time_serie_${nomeSensor}.json`).then(res => res.json()).catch(() => []),
-      fetch(`/data/correcao_niveis.json`).then(res => res.json()).catch(() => ({}))
-    ])
-      .then(([jsonObservado, jsonPrevisao, jsonCorrecao]) => {
+      fetch(`/data/correcao_niveis.json`).then(res => res.json()).catch(() => ({})),
+        // Somente a estação 7 utiliza o HidroSens/UFPel
+      estacaoSelecionada.id === 7
+        ? fetch(`/data/observado_sendor_Laranjal_Hidrosens.json`)
+            .then(res => res.json())
+            .catch(() => [])
+        : Promise.resolve([])
+      ])
+      .then(([jsonObservado, jsonPrevisao, jsonCorrecao, jsonHidrosens]) => {
         const mapaAgrupado = {};
 
         const erro = jsonCorrecao[nomeSensor]?.mae_corrigido_cm;
@@ -158,9 +189,42 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
             timestamp: ts,
             dataOriginal: item.data,
             observado: item.valor,
+            observadoHidrosens: null,
             previsao: null
           };
         });
+
+
+        // OBSERVADO HIDROSENS - UFPel
+        // Exclusivo da estação 7 - Pelotas
+
+        if (estacaoSelecionada.id === 7) {
+
+          jsonHidrosens.forEach((item) => {
+            const ts = obterTimestamp(item.data);
+            if (!ts) return;
+
+            const valor = item.valor !== null && item.valor !== undefined
+              ? Number(item.valor)
+              : null;
+
+            if (mapaAgrupado[ts]) {
+
+              mapaAgrupado[ts].observadoHidrosens = valor;
+
+            } else {
+
+              mapaAgrupado[ts] = {
+                timestamp: ts,
+                dataOriginal: item.data,
+                observado: null,
+                observadoHidrosens: valor,
+                previsao: null
+              };
+
+            }
+          });
+        }
 
         jsonPrevisao.forEach((item) => {
           const ts = obterTimestamp(item.data);
@@ -209,27 +273,37 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6];
 
         setData(listaUnificada);
 
-// Insere pontos de quebra (observado: null) diretamente no array
-// unificado, sempre que o intervalo entre duas leituras reais de
-// "observado" for maior que o limiar. Isso mantém TODOS os elementos
-// do gráfico (Line, Area, Tooltip) lendo do mesmo array/índices.
-const pontosObservado = listaUnificada
-  .filter((item) => item.observado !== null && item.observado !== undefined)
+// ============================================================
+// QUEBRA DE LINHA SOMENTE PARA OBSERVADO HIDROSENS
+// ============================================================
+
+const pontosHidrosens = listaUnificada
+  .filter(
+    (item) =>
+      item.observadoHidrosens !== null &&
+      item.observadoHidrosens !== undefined
+  )
   .sort((a, b) => a.timestamp - b.timestamp);
 
-const pontosDeQuebra = [];
+const pontosDeQuebraHidrosens = [];
 
-pontosObservado.forEach((ponto, index) => {
+pontosHidrosens.forEach((ponto, index) => {
   if (index === 0) return;
 
-  const anterior = pontosObservado[index - 1];
+  const anterior = pontosHidrosens[index - 1];
   const gap = ponto.timestamp - anterior.timestamp;
 
   if (gap > LIMIAR_GAP_OBSERVADO_MS) {
-    pontosDeQuebra.push({
+    pontosDeQuebraHidrosens.push({
       timestamp: anterior.timestamp + 1,
       dataOriginal: null,
+
+      
       observado: null,
+
+      // quebra somente do HidroSens
+      observadoHidrosens: null,
+
       previsao: null,
       previsaoMin: null,
       previsaoMax: null,
@@ -239,8 +313,13 @@ pontosObservado.forEach((ponto, index) => {
   }
 });
 
-const listaComQuebras = [...listaUnificada, ...pontosDeQuebra]
-  .sort((a, b) => a.timestamp - b.timestamp);
+const listaComQuebras = [
+  ...listaUnificada,
+  ...pontosDeQuebraHidrosens
+].sort((a, b) => a.timestamp - b.timestamp);
+
+setData(listaComQuebras);
+setLoading(false);
 
 setData(listaComQuebras);
 setLoading(false);
@@ -291,7 +370,8 @@ setLoading(false);
            <XAxis
           dataKey="timestamp"
           type="number"
-          domain={['dataMin', 'dataMax']}
+          domain={dominioPrevisao}        // <-- Alterado de ['dataMin', 'dataMax']
+          allowDataOverflow={true}
           interval={0}       
           tickCount={isMobile ? 6 : 12}
           ticks={isMobile ? ticksMobile : ticks12h}
@@ -327,6 +407,7 @@ setLoading(false);
                  const valores = data
                   .flatMap((item) => [
                     item.observado,
+                    item.observadoHidrosens,
                     item.previsao,
                     ocultarLinhaCota ? null : item.cotaInundacao,
                   ])
@@ -416,13 +497,26 @@ setLoading(false);
             <Line
             type="monotone"
             dataKey="observado"
-            name="Observado"
+            name="Observado - CIEX"
             stroke="#ff7300"
+            strokeWidth={2.5}
+            dot={false}
+            connectNulls={true}
+            isAnimationActive={false}
+          />
+
+          {estacaoSelecionada.id === 7 && (
+          <Line
+            type="monotone"
+            dataKey="observadoHidrosens"
+            name="Observado HidroSens - UFPel"
+            stroke="#7B1FA2"
             strokeWidth={2.5}
             dot={false}
             connectNulls={false}
             isAnimationActive={false}
           />
+        )}
             <Line type="linear" dataKey="previsao" name="Previsão" stroke="#2A3D59" strokeWidth={2.5} dot={false} connectNulls={true} />
             <Area type="monotone" dataKey="faixaErro" name="Erro médio" stroke="none" fill="#808080" fillOpacity={0.25} legendType="rect" connectNulls={true} isAnimationActive={false} />
             {!ocultarLinhaCota && (
@@ -431,7 +525,7 @@ setLoading(false);
             dataKey="cotaInundacao"
             name="Cota de Inundação"
             stroke="#2e7d32"
-            strokeWidth={2}
+            strokeWidth={2.5}
             dot={false}
             activeDot={false}
             connectNulls={true}
