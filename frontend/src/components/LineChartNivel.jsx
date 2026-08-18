@@ -157,7 +157,7 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7];
       fetch(`/data/correcao_niveis.json`).then(res => res.json()).catch(() => ({})),
         // Somente a estação 7 utiliza o HidroSens/UFPel
       estacaoSelecionada.id === 7
-        ? fetch(`/data/observado_sendor_Laranjal_Hidrosens.json`)
+        ? fetch(`/data/observado_sensor_Laranjal_Hidrosens.json`)
             .then(res => res.json())
             .catch(() => [])
         : Promise.resolve([])
@@ -509,7 +509,7 @@ setLoading(false);
           <Line
             type="monotone"
             dataKey="observadoHidrosens"
-            name="Observado HidroSens - UFPel"
+            name="Observado - HidroSens UFPel"
             stroke="#7B1FA2"
             strokeWidth={2.5}
             dot={false}
