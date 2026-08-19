@@ -48,24 +48,42 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7];
   const LIMIAR_GAP_OBSERVADO_MS = 60 * 60 * 1000; // 1 hora
   const [dadosObservadoGrafico, setDadosObservadoGrafico] = useState([]);
 
+
+  const dominioPrevisao = (() => {
+    if (!data || data.length === 0) {
+      return ["auto", "auto"];
+    }
+
+    const timestampsPrevisao = data
+      .filter(
+        (item) =>
+          item.previsao !== null &&
+          item.previsao !== undefined &&
+          !isNaN(item.timestamp)
+      )
+      .map((item) => item.timestamp);
+
+    if (timestampsPrevisao.length === 0) {
+      return ["auto", "auto"];
+    }
+
+    return [
+      Math.min(...timestampsPrevisao),
+      Math.max(...timestampsPrevisao),
+    ];
+  })();
+
+
   const ticks12h = (() => {
     if (!data || data.length === 0) return [];
+    if (dominioPrevisao[0] === "auto") return [];
 
-    const timestamps = data
-      .map((item) => item.timestamp)
-      .filter((ts) => ts !== null && ts !== undefined && !isNaN(ts));
-
-    if (timestamps.length === 0) return [];
-
-    const minTs = Math.min(...timestamps);
-    const maxTs = Math.max(...timestamps);
+    const [minTs, maxTs] = dominioPrevisao; 
 
     const ticks = [];
     const cursor = new Date(minTs);
     cursor.setHours(12, 0, 0, 0);
 
-    // se o meio-dia calculado já ficou antes do início real dos dados,
-    // avança pro próximo dia para não gerar tick fora do domínio
     if (cursor.getTime() < minTs) {
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -79,30 +97,6 @@ const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7];
   })();
 
   const ticksMobile = ticks12h.filter((_, i) => i % 2 === 0);
-
-  const dominioPrevisao = (() => {
-  if (!data || data.length === 0) {
-    return ["auto", "auto"];
-  }
-
-  const timestampsPrevisao = data
-    .filter(
-      (item) =>
-        item.previsao !== null &&
-        item.previsao !== undefined &&
-        !isNaN(item.timestamp)
-    )
-    .map((item) => item.timestamp);
-
-  if (timestampsPrevisao.length === 0) {
-    return ["auto", "auto"];
-  }
-
-  return [
-    Math.min(...timestampsPrevisao),
-    Math.max(...timestampsPrevisao),
-  ];
-})();
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
