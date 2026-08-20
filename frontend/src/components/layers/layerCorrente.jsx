@@ -191,16 +191,15 @@ setGeojsonDirecao(direcaoNormalizada);
             color: "#2A3D59"
           }}
         >
-          <span>1</span>
-          <span>0.8</span>
-          <span></span>
-          <span>0.6</span>
-          <span></span>
-          <span></span>
-          <span>0.4</span>
-          <span></span>
-          <span>0.2</span>
-          <span>0</span>
+            <span>2.0</span>
+            <span>1.7</span>
+            <span>1.5</span>
+            <span>1.3</span>
+            <span>1</span>
+            <span>0.7</span>
+            <span>0.5</span>
+            <span>0.3</span>
+            <span>0</span>
         </div>
       </div>
     </div>
@@ -313,7 +312,7 @@ setGeojsonDirecao(direcaoNormalizada);
 
       {/* ==================== RENDERIZAÇÃO DAS CAMADAS OPERACIONAIS ==================== */}
 
-      {/* 1. CAMADA DE VELOCIDADE (0 a 50 m/s escala visual) */}
+      
 {geojsonVelocidade && (
   <Source
     id="corrente-velocidade"
@@ -329,17 +328,15 @@ setGeojsonDirecao(direcaoNormalizada);
           ["linear"],
           ["get", "velocidade"],
 
-            0, "#2D1E5F",
-            5, "#3B0F70",
-            10, "#2C3E8C",
-            15, "#1F5AA6",
-            20, "#1177B3",
-            25, "#1F9E89",
-            30, "#35B779",
-            40, "#B4DE2C",
-            60, "#FDE725",
-            80, "#F8961E",
-            100, "#DC2F02"
+                 0,   "#2D1E5F",  // 0.0 m/s
+                30,  "#3B0F70",  // 0.3 m/s
+                50,  "#2C3E8C",  // 0.5 m/s
+                70,  "#1F5AA6",  // 0.7 m/s
+                100, "#1177B3",  // 1.0 m/s
+                130, "#1F9E89",  // 1.3 m/s
+                150, "#35B779",  // 1.5 m/s
+                170, "#FDE725",  // 1.7 m/s
+                200, "#DC2F02"   // 2.0 m/s
         ],
 
         "fill-opacity": 0.9,
