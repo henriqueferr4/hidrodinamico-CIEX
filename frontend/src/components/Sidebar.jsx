@@ -38,7 +38,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
 
   const menuItems = [ { label: "Nível", value: "nivel", icon: <WaterIcon />, }, 
     { label: "Vazão", value: "vazao", icon: <SouthEastIcon />, }, 
-    { label: "Salinidade", value: "salinidade", icon: <OpacityIcon />, }, 
+    //{ label: "Salinidade", value: "salinidade", icon: <OpacityIcon />, }, 
     { label: "Corrente", value: "corrente", icon: <TsunamiIcon />, }, 
     { label: "Vento", value: "vento", icon: <AirIcon />, }, ];
 
@@ -191,7 +191,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
         ))}
        
         </List>
-        <Box
+        {/* <Box
           sx={{
             px: 2,
             py: 1,
@@ -207,12 +207,12 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
             }}
           >
             {open ? "Cenários" : "Cenários"}
-          </Typography>
-        </Box>
+          </Typography> */}
+        {/* </Box> */}
         
         {/* Cenário 1 */}
         <List>
-          <ListItemButton
+          {/* <ListItemButton
             onClick={() => {
                         if (!open) {
                           setOpen(true);
@@ -288,9 +288,9 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
               }}
                 />
               </ListItemButton>
-            ))}
-          </List>
-        </Collapse>
+            ))} */}
+          {/* </List> */}
+        {/* </Collapse> */}
         
 
         {/* Cenário 2

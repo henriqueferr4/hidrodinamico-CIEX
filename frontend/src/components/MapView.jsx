@@ -1,7 +1,7 @@
 import LayerNivel from "./layers/layerNivel";
 import ChartNivel from "./LineChartNivel";
 import LayerVazao from "./layers/layerVazao";
-import SidebarVazao from "./layers/sidebarVazao";
+import LineChartVazao from "./LineChartVazao";
 import LayerVento from "./layers/layerVento";
 import LayerCorrente from "./layers/layerCorrente";
 import LayerMalha from "./layers/layerMalha"
@@ -34,6 +34,9 @@ export default function MapView({
 }) {
   const mapRef = useRef();
   const chartApiRef = useRef(null);
+  const chartVazaoRef = useRef(null);
+
+  const [rioSelecionado, setRioSelecionado] = useState(null);
 
 
   useEffect(() => {
@@ -44,6 +47,10 @@ export default function MapView({
 
   const [dataFormatada, setDataFormatada] = useState("");
   const [posicaoPixel, setPosicaoPixel] = useState({ x: 0, y: 0 });
+  const [posicaoPixelVazao, setPosicaoPixelVazao] = useState({
+  x: 0,
+  y: 0,
+});
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -59,6 +66,22 @@ export default function MapView({
       y: pixel.y
     });
   };
+
+  const atualizarPosicaoGraficoVazao = () => {
+  if (!mapRef.current || !rioSelecionado) return;
+
+  const map = mapRef.current.getMap();
+
+  const pixel = map.project([
+    rioSelecionado.longitude,
+    rioSelecionado.latitude,
+  ]);
+
+  setPosicaoPixelVazao({
+    x: pixel.x,
+    y: pixel.y,
+  });
+};
 
   useEffect(() => {
     if (!estacaoSelecionada) return;
@@ -80,6 +103,22 @@ export default function MapView({
           .then(r => r.json())
           .then(setGeojsonVazao);
   }, []);
+
+  useEffect(() => {
+  if (!rioSelecionado) return;
+
+  atualizarPosicaoGraficoVazao();
+
+  const map = mapRef.current?.getMap();
+
+  if (map) {
+    map.on("move", atualizarPosicaoGraficoVazao);
+  }
+
+  return () => {
+    map?.off("move", atualizarPosicaoGraficoVazao);
+  };
+}, [rioSelecionado]);
   
   const tituloGrafico = TITULOS_VARIAVEL[variavelAtiva] ?? "";
 
@@ -114,11 +153,11 @@ export default function MapView({
         )}
 
         
-        {variavelAtiva === "vazao" && geojsonVazao && (
-            <>
-                <LayerVazao geojson={geojsonVazao}/>
-                <SidebarVazao geojson={geojsonVazao}/>
-            </>
+        {variavelAtiva === "vazao" && (
+          <LayerVazao
+            rioSelecionado={rioSelecionado}
+            setRioSelecionado={setRioSelecionado}
+          />
         )}
 
         {/* 3. Camada de Vento */}
@@ -151,6 +190,203 @@ export default function MapView({
         )}
 
       </Map>
+
+      {/* Pop-up do Gráfico de Vazão */}
+      {variavelAtiva === "vazao" && rioSelecionado && (
+        isMobile ? (
+          createPortal(
+            <div
+              style={{
+                position: "fixed",
+                zIndex: 2000,
+                left: "50%",
+                bottom: "16px",
+                transform: "translateX(-50%)",
+                width: "95vw",
+                maxWidth: "95vw",
+                height: "260px",
+                background: "rgba(255, 255, 255, 0.88)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.4)",
+                borderRadius: "16px",
+                padding: "10px 12px",
+                boxShadow: "0 10px 30px rgba(42, 61, 89, 0.2)",
+                display: "flex",
+                flexDirection: "column",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  display: "flex",
+                  gap: "6px",
+                  zIndex: 1000,
+                }}
+              >
+                <button
+                  onClick={() =>
+                    chartVazaoRef.current?.baixarGrafico()
+                  }
+                  title="Baixar gráfico (PNG)"
+                  style={{
+                    background: "rgba(42, 61, 89, 0.1)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "22px",
+                    height: "22px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#2A3D59",
+                  }}
+                >
+                  <Download size={11} />
+                </button>
+
+                <button
+                  onClick={() => setRioSelecionado(null)}
+                  title="Fechar"
+                  style={{
+                    background: "rgba(42, 61, 89, 0.1)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "22px",
+                    height: "22px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#2A3D59",
+                  }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+
+              <div
+                style={{
+                  flexGrow: 1,
+                  width: "100%",
+                  height: "100%",
+                  minHeight: 0,
+                }}
+              >
+                <LineChartVazao
+                  ref={chartVazaoRef}
+                  rioSelecionado={rioSelecionado}
+                  titulo="Previsão de Vazão"
+                />
+              </div>
+            </div>,
+            document.body
+          )
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              zIndex: 1010,
+
+              left: `${posicaoPixelVazao.x - 5}px`,
+              top: `${posicaoPixelVazao.y - 340}px`,
+
+              width: "800px",
+              height: "320px",
+
+              background: "rgba(255, 255, 255, 0.88)",
+              backdropFilter: "blur(10px)",
+
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              borderRadius: "16px",
+
+              padding: "16px",
+
+              boxShadow:
+                "0 10px 30px rgba(42, 61, 89, 0.2)",
+
+              display: "flex",
+              flexDirection: "column",
+
+              fontFamily:
+                "system-ui, -apple-system, sans-serif",
+
+              pointerEvents: "auto",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 18,
+                right: 18,
+                display: "flex",
+                gap: "8px",
+                zIndex: 1000,
+              }}
+            >
+              <button
+                onClick={() =>
+                  chartVazaoRef.current?.baixarGrafico()
+                }
+                title="Baixar gráfico (PNG)"
+                style={{
+                  background: "rgba(42, 61, 89, 0.1)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#00695C",
+                }}
+              >
+                <Download size={13} />
+              </button>
+
+              <button
+                onClick={() => setRioSelecionado(null)}
+                title="Fechar"
+                style={{
+                  background: "rgba(42, 61, 89, 0.1)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#00695C",
+                }}
+              >
+                <X size={13} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                flexGrow: 1,
+                width: "100%",
+                height: "100%",
+                minHeight: 0,
+              }}
+            >
+              <LineChartVazao
+                ref={chartVazaoRef}
+                rioSelecionado={rioSelecionado}
+                titulo="Previsão de Vazão"
+              />
+            </div>
+          </div>
+        )
+      )}
 
       {/* Pop-up do Gráfico de Nível */}
     {variavelAtiva === "nivel" && estacaoSelecionada && (
