@@ -17,7 +17,7 @@ function App() {
   const [modalAberto, setModalAberto] = useState(false);
   const [activeView, setActiveView] = useState("nivel");
   const [timeStep, setTimeStep] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [variavelAtiva, setVariavelAtiva] = useState("nivel");
   const [fonteDados, setFonteDados] = useState("previsao");
   const [estacaoSelecionada, setEstacaoSelecionada] = useState(null);
