@@ -6,21 +6,21 @@ const RIOS_VAZAO = [
   {
     id: "Qguaiba",
     nome: "Guaíba",
-    latitude: -30.384209,
-    longitude: -51.082335,
+    latitude: -30.096002,
+    longitude: -51.291111,
   },
   {
     id: "Qcamaqua",
     nome: "Rio Camaquã",
-    latitude: -31.287347,
-    longitude: -51.740213,
+    latitude: -31.288251,
+    longitude: -51.751941,
   },
-  {
-    id: "Qpiratini",
-    nome: "Rio Piratini",
-    latitude: -32.013730,
-    longitude: -52.418784,
-  },
+  // {
+  //   id: "Qpiratini",
+  //   nome: "Rio Piratini",
+  //   latitude: -32.013730,
+  //   longitude: -52.418784,
+  // },
   {
     id: "Qjaguarao",
     nome: "Rio Jaguarão",
@@ -42,8 +42,8 @@ const RIOS_VAZAO = [
   {
     id: "Qsaogoncalo",
     nome: "Canal São Gonçalo",
-    latitude: -31.789522,
-    longitude: -52.221304,
+    latitude: -31.799259,
+    longitude: -52.356020,
   },
 ];
 

@@ -10,7 +10,7 @@ export default function LayerMalha({ fonteDados, visivel = true }) {
     const controller = new AbortController();
     const { signal } = controller;
 
-    const filename = `/data/malha/malha.geojson`;
+    const filename = `/data/malha.geojson`;
 
     fetch(filename, { signal })
       .then((response) => {
