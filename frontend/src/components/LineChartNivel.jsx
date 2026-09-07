@@ -29,6 +29,8 @@ const SENSOR_POR_ID = {
   5: "Itapua",
   6: "Tavares",
   7: "Pelotas",
+  8: "Mostardas_DC",
+  9: "ColoniaZ3_DC"
 };
 
 // Cota de inundação (cm) por ID de estação
@@ -41,7 +43,7 @@ const COTA_INUNDACAO_POR_ID = {
 };
 
 // Estações que não devem plotar a linha da cota de inundação no gráfico
-const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7];
+const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7, 8, 9];
 
 const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   // ---------------------------------------------------------------------
@@ -575,7 +577,17 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                 color: "#2A3D59",
               }}
               payload={[
-                { value: "Observado", type: "circle", color: "#ff7300" },
+                {
+                  value:
+                    estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
+                      ? "Observado - DC"
+                      : "Observado - CIEX",
+                  type: "circle",
+                  color:
+                    estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
+                      ? "#F9A825"
+                      : "#ff7300",
+                },
                 { value: "Previsão", type: "circle", color: "#2A3D59" },
                 { value: "Erro médio", type: "rect", color: "#808080" },
                 ...(cotaInundacao !== null
@@ -590,12 +602,20 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               ]}
             />
 
-            {/* Linha: observado CIEX */}
+            {/* Linha: observado */}
             <Line
               type="monotone"
               dataKey="observado"
-              name="Observado - CIEX"
-              stroke="#ff7300"
+              name={
+                estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
+                  ? "Observado - DC"
+                  : "Observado - CIEX"
+              }
+              stroke={
+                estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
+                  ? "#F9A825"
+                  : "#ff7300"
+              }
               strokeWidth={2.5}
               dot={false}
               connectNulls={true}

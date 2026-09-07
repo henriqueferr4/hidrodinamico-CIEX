@@ -10,7 +10,9 @@ const STATIONS = [
   { id: 4, nome: "SJN", latitude: -32.01310, longitude: -52.04398 },
   { id: 5, nome: "Itapuã", latitude: -30.38512, longitude: -51.05926 },
   { id: 6, nome: "Tavares", latitude: -31.28002, longitude: -51.15804 },
-  { id: 7, nome: "Pelotas", latitude: -31.764725, longitude: -52.226296}
+  { id: 7, nome: "Pelotas", latitude: -31.764725, longitude: -52.226296},
+  { id: 8, nome: "Mostardas", latitude: -31.020614, longitude: -50.967112},
+  { id: 9, nome: "Colônia Z3", latitude: -31.702306, longitude: -52.156611},
 ];
 
 export default function LayerNivel({
@@ -19,14 +21,22 @@ export default function LayerNivel({
   dataFormatada,
   setDataFormatada,
   estacaoSelecionada,
-  setEstacaoSelecionada
+  setEstacaoSelecionada,
+  fonteDados
 }) {
   const [geojson, setGeojson] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataBaseTimeline, setDataBaseTimeline] = useState(null);
-  const [maxTimeStep, setMaxTimeStep] = useState(70); // ajuste se souber o valor exato
+  const isCenario = fonteDados === "cenario1";
 
-  const tickInterval = 24;
+  const maxTimeStep = isCenario
+    ? 30 * 24   // 30 dias = 720 horas
+    : 70;
+
+  const tickInterval = isCenario
+    ? 10 * 24   // marcador a cada 10 dias
+    : 24;
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -55,7 +65,14 @@ export default function LayerNivel({
     const { signal } = controller;
 
     const timestepFormatado = String(timeStep).padStart(3, "0");
-    const filename = `/data/nivel_timestep_${timestepFormatado}.geojson`;
+
+    let filename;
+
+    if (fonteDados === "cenario1") {
+      filename = `/data/maio_2024_nivel_timestep_${timestepFormatado}.geojson`;
+    } else {
+      filename = `/data/nivel_timestep_${timestepFormatado}.geojson`;
+    }
 
     fetch(filename, { signal })
       .then((response) => {
@@ -101,7 +118,7 @@ export default function LayerNivel({
   return (
     <>
       {/* ESTAÇÕES */}
-      {STATIONS.map((station) => (
+      {fonteDados === "previsao" && STATIONS.map((station) => (
         <Marker
           key={station.id}
           longitude={station.longitude}
@@ -123,7 +140,10 @@ export default function LayerNivel({
           <div
           style={{
             background: "rgba(255, 255, 255, 0.9)",
-            color: "#2A3D59",
+            color:
+            station.id === 8 || station.id === 9
+              ? "#F9A825"
+              : "#2A3D59",
             padding: isMobile ? "2px 5px" : "3px 7px",
             borderRadius: "5px",
             fontSize: isMobile ? "8px" : "13px",
@@ -142,7 +162,10 @@ export default function LayerNivel({
                 width: estacaoSelecionada?.id === station.id ? "24px" : "16px",
                 height: estacaoSelecionada?.id === station.id ? "24px" : "16px",
                 borderRadius: "50%",
-                backgroundColor: "#2A3D59",
+                backgroundColor:
+                station.id === 8 || station.id === 9
+                  ? "#F9A825"
+                  : "#2A3D59",
                 border: "3px solid white",
                 boxShadow:
                   estacaoSelecionada?.id === station.id
@@ -155,15 +178,107 @@ export default function LayerNivel({
         </Marker>
       ))}
 
+      {/* Legenda das estações */}
+{fonteDados === "previsao" && (
+  <div
+    style={{
+      position: "absolute",
+      right: isMobile ? "10px" : "20px",
+      top: isMobile ? "10px" : "20px",
+      zIndex: 1000,
+
+      background: "rgba(255, 255, 255, 0.8)",
+      backdropFilter: "blur(8px)",
+      padding: isMobile ? "8px 10px" : "12px 14px",
+      borderRadius: "12px",
+      boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
+      border: "1px solid rgba(255, 255, 255, 0.4)",
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      color: "#2A3D59",
+    }}
+  >
+    {/* Título */}
+    <div
+      style={{
+        fontSize: isMobile ? "10px" : "12px",
+        fontWeight: "700",
+        textAlign: "left",
+        marginBottom: isMobile ? "6px" : "10px",
+        color: "#2A3D59",
+      }}
+    >
+      LEGENDA
+    </div>
+
+    {/* Rede de Monitoramento */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+        marginBottom: "6px",
+      }}
+    >
+      <div
+        style={{
+          width: isMobile ? "12px" : "16px",
+          height: isMobile ? "12px" : "16px",
+          borderRadius: "50%",
+          backgroundColor: "#2A3D59",
+          border: "2px solid white",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+        }}
+      />
+      <span
+        style={{
+          fontSize: isMobile ? "10px" : "12px",
+          fontWeight: "600",
+        }}
+      >
+        Rede de Monitoramento
+      </span>
+    </div>
+
+    {/* Defesa Civil */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+      }}
+    >
+      <div
+        style={{
+          width: isMobile ? "12px" : "16px",
+          height: isMobile ? "12px" : "16px",
+          borderRadius: "50%",
+          backgroundColor: "#F9A825",
+          border: "2px solid white",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+        }}
+      />
+      <span
+        style={{
+          fontSize: isMobile ? "10px" : "12px",
+          fontWeight: "600",
+        }}
+      >
+        Defesa Civil
+      </span>
+    </div>
+  </div>
+)}
+
       {/* Legenda */}
       <div
         style={{
           position: "absolute",
           right: isMobile ? "10px" : "20px",
-          top: "20px",
+          top: isMobile ? "110px" : "135px",
           zIndex: 1000,
           background: "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(8px)",
+          width: isMobile ? "70px" : "185px",
           border: "1px solid rgba(255, 255, 255, 0.4)",
           padding: isMobile ? "8px 10px" : "12px 14px",
           borderRadius: "12px",
@@ -171,13 +286,13 @@ export default function LayerNivel({
           fontFamily: "system-ui, -apple-system, sans-serif"
         }}
       >
-        <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", textAlign: "center", marginBottom: isMobile ? "6px" : "10px", color: "#2A3D59" }}>
+        <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", textAlign: "left", marginBottom: isMobile ? "6px" : "10px", color: "#2A3D59" }}>
           Nível (cm)
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px" }}>
           <div
             style={{
-              width: isMobile ? "10px" : "14px",
+              width: isMobile ? "12px" : "18px",
               height: isMobile ? "160px" : "300px",
               borderRadius: "4px",
               background: "linear-gradient(to top, #440154, #443983, #31688E, #21908C, #20A387, #35B779, #4EA53B, #B4DE2C, #FDE725, #F8961E, #DC2F02)",

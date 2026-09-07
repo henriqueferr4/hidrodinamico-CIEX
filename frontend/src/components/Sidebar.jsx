@@ -142,7 +142,10 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
           
             <ListItemButton 
             key={item.value} 
-            selected={variavelAtiva === item.value} 
+            selected={
+            fonteDados === "previsao" &&
+            variavelAtiva === item.value
+          } 
             onClick={() => {
     setFonteDados("previsao");
     setVariavelAtiva(item.value);
@@ -158,12 +161,18 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
               px: 2, 
               color: "#ffffff",
               backgroundColor:
-              variavelAtiva === item.value ? "#2563eb" : "transparent",
+      fonteDados === "previsao" &&
+      variavelAtiva === item.value
+        ? "#2563eb"
+        : "transparent",
 
-              "&:hover": {
-                backgroundColor:
-                  variavelAtiva === item.value ? "#1d4ed8" : "rgba(37, 99, 235, 0.15)",
-              },
+    "&:hover": {
+      backgroundColor:
+        fonteDados === "previsao" &&
+        variavelAtiva === item.value
+          ? "#1d4ed8"
+          : "rgba(37, 99, 235, 0.15)",
+    },
 
               }} > 
                 <ListItemIcon
@@ -191,7 +200,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
         ))}
        
         </List>
-        {/* <Box
+         {/* <Box
           sx={{
             px: 2,
             py: 1,
@@ -207,8 +216,8 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
             }}
           >
             {open ? "Cenários" : "Cenários"}
-          </Typography> */}
-        {/* </Box> */}
+          </Typography> 
+         </Box>  */}
         
         {/* Cenário 1 */}
         <List>
@@ -265,6 +274,11 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
             {menuItems.map((item) => (
               <ListItemButton
                 key={item.value}
+                selected={
+      fonteDados === "cenario1" &&
+      variavelAtiva === item.value
+    }
+
                 sx={{ 
                   pl: open ? 5 : 1,
                   ml: open ? 1 : 0,
@@ -288,9 +302,9 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
               }}
                 />
               </ListItemButton>
-            ))} */}
-          {/* </List> */}
-        {/* </Collapse> */}
+            ))} 
+           </List> 
+         </Collapse> */}
         
 
         {/* Cenário 2
