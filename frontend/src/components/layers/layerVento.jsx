@@ -176,47 +176,140 @@ export default function LayerVento({
         </div>
       </div>
 
-      {/* TIMELINE */}
+      {/* Timeline Interativa */}
       <div
         style={{
           position: "absolute",
-          bottom: isMobile ? "10px" : "20px",
+          bottom: isMobile ? "28px" : "20px",
           left: "50%",
           transform: "translateX(-50%)",
-          width: isMobile ? "92%" : "65%",
-          minWidth: isMobile ? "0" : "400px",
+
+          width: isMobile ? "94%" : "68%",
+          minWidth: isMobile ? "0" : "520px",
+
           zIndex: 1000,
-          background: "rgba(255, 255, 255, 0.8)",
+
+          background: "rgba(255, 255, 255, 0.82)",
           backdropFilter: "blur(8px)",
-          padding: isMobile ? "8px 12px" : "10px 18px",
+
+          padding: isMobile ? "8px 12px" : "10px 16px",
+
           borderRadius: "12px",
-          boxShadow: "0 10px 30px rgba(42,61,89,0.15)",
-          border: "1px solid rgba(42,61,89,0.1)"
+          boxShadow: "0 8px 24px rgba(42, 61, 89, 0.15)",
+          border: "1px solid rgba(42, 61, 89, 0.1)",
+
+          boxSizing: "border-box",
+          fontFamily: "system-ui, -apple-system, sans-serif",
+
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: isMobile ? "4px" : "6px",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px" }}>
+        {/* Informações superiores */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+
+            paddingLeft: isMobile ? "36px" : "42px",
+
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Data e hora */}
+          <span
+            style={{
+              fontSize: isMobile ? "11px" : "14px",
+              fontWeight: "700",
+              color: "#2A3D59",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {dataFormatada || "Carregando..."}
+          </span>
+
+          {/* Horas adicionais */}
+          <span
+            style={{
+              fontSize: isMobile ? "10px" : "12px",
+              fontWeight: "600",
+
+              background: "rgba(42, 61, 89, 0.1)",
+              color: "#2A3D59",
+
+              padding: isMobile ? "2px 6px" : "3px 8px",
+              borderRadius: "20px",
+
+              whiteSpace: "nowrap",
+            }}
+          >
+            + {timeStep}h
+          </span>
+        </div>
+
+        {/* Linha principal */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            width: "100%",
+            gap: isMobile ? "10px" : "12px",
+          }}
+        >
+          {/* Play / Pause */}
+          <div
+            style={{
+              paddingTop: isMobile ? "0px" : "0px",
+              flexShrink: 0,
+            }}
+          >
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               style={{
                 background: "#2A3D59",
                 border: "none",
                 borderRadius: "50%",
-                width: isMobile ? "26px" : "32px",
-                height: isMobile ? "26px" : "32px",
+
+                width: isMobile ? "30px" : "34px",
+                height: isMobile ? "30px" : "34px",
+                minWidth: isMobile ? "30px" : "34px",
+
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+
                 cursor: "pointer",
-                color: "white"
+                color: "white",
+
+                padding: 0,
               }}
             >
               {isPlaying ? (
-                <svg width={isMobile ? "8" : "10"} height={isMobile ? "10" : "12"} viewBox="0 0 10 12" fill="none">
-                  <path d="M2 1V11M8 1V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                <svg
+                  width={isMobile ? "9" : "11"}
+                  height={isMobile ? "11" : "13"}
+                  viewBox="0 0 10 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 1V11M8 1V11"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               ) : (
-                <svg width={isMobile ? "10" : "12"} height={isMobile ? "12" : "14"} viewBox="0 0 12 14" fill="none" style={{ marginLeft: "2px" }}>
+                <svg
+                  width={isMobile ? "11" : "13"}
+                  height={isMobile ? "13" : "15"}
+                  viewBox="0 0 12 14"
+                  fill="none"
+                  style={{ marginLeft: "2px" }}
+                >
                   <path
                     d="M1.5 1.75V12.25L9.75 7L1.5 1.75Z"
                     fill="white"
@@ -227,58 +320,113 @@ export default function LayerVento({
                 </svg>
               )}
             </button>
-            <span style={{ fontSize: isMobile ? "12px" : "15px", fontWeight: "700", color: "#2A3D59" }}>
-              {dataFormatada || "..."}
-            </span>
           </div>
-          <span
+
+          {/* Timeline */}
+          <div
             style={{
-              fontSize: isMobile ? "10px" : "12px",
-              fontWeight: "600",
-              background: "rgba(42,61,89,0.1)",
-              color: "#2A3D59",
-              padding: isMobile ? "3px 8px" : "4px 10px",
-              borderRadius: "20px"
+              flex: 1,
+              minWidth: 0,
             }}
           >
-            + {timeStep}h
-          </span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={maxTimeStep}
-          value={timeStep}
-          step={1}
-          onChange={(e) => setTimeStep(Number(e.target.value))}
-          style={{ width: "100%", marginTop: isMobile ? "6px" : "10px", cursor: "pointer", accentColor: "#2A3D59" }}
-        />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: isMobile ? "4px" : "8px" }}>
-          {ticks.map((tick) => {
-            let textoMarcador = tick === 0 ? "Início" : `+${tick}h`;
-            if (dataBaseTimeline) {
-              const dataMarcador = new Date(dataBaseTimeline);
-              dataMarcador.setHours(dataMarcador.getHours() + tick);
-              const dia = String(dataMarcador.getDate()).padStart(2, "0");
-              const mes = dataMarcador.toLocaleDateString("pt-BR", { month: "short" });
-              textoMarcador = `${dia} ${mes}`;
-            }
-            return (
-              <div
-                key={tick}
+            {/* Slider */}
+            <div
+              style={{
+                height: isMobile ? "30px" : "34px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <input
+                type="range"
+                min={0}
+                max={maxTimeStep}
+                value={timeStep}
+                step={1}
+                onChange={(e) => setTimeStep(Number(e.target.value))}
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  fontSize: isMobile ? "9px" : "11px",
-                  color: timeStep >= tick ? "#2A3D59" : "#A0AEC0"
+                  width: "100%",
+                  cursor: "pointer",
+                  accentColor: "#2A3D59",
+                  margin: 0,
+                  padding: 0,
                 }}
-              >
-                <div style={{ width: "2px", height: "5px", background: timeStep >= tick ? "#2A3D59" : "#CBD5E0", marginBottom: "4px" }} />
-                {textoMarcador}
-              </div>
-            );
-          })}
+              />
+            </div>
+
+            {/* Marcadores */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+                marginTop: isMobile ? "2px" : "3px",
+              }}
+            >
+              {ticks.map((tick) => {
+                let textoMarcador =
+                  tick === 0 ? "Início" : `+${tick}h`;
+
+                if (dataBaseTimeline) {
+                  const dataMarcador = new Date(dataBaseTimeline);
+
+                  dataMarcador.setHours(
+                    dataMarcador.getHours() + tick
+                  );
+
+                  const dia = String(
+                    dataMarcador.getDate()
+                  ).padStart(2, "0");
+
+                  const mes = dataMarcador.toLocaleDateString(
+                    "pt-BR",
+                    {
+                      month: "short",
+                    }
+                  );
+
+                  textoMarcador = `${dia} ${mes}`;
+                }
+
+                return (
+                  <div
+                    key={tick}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+
+                      fontSize: isMobile ? "8px" : "10px",
+                      fontWeight: "600",
+
+                      color:
+                        timeStep >= tick
+                          ? "#2A3D59"
+                          : "#A0AEC0",
+
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "2px",
+                        height: isMobile ? "4px" : "5px",
+
+                        background:
+                          timeStep >= tick
+                            ? "#2A3D59"
+                            : "#CBD5E0",
+
+                        marginBottom: "3px",
+                      }}
+                    />
+
+                    {textoMarcador}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
