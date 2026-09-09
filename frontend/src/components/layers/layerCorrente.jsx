@@ -16,8 +16,15 @@ export default function LayerCorrente({
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataBaseTimeline, setDataBaseTimeline] = useState(null);
 
-  const maxTimeStep = fonteDados === "previsao" ? 72 : 701;
-  const tickInterval = fonteDados === "previsao" ? 24 : 120;
+  const isCenario = fonteDados === "cenario1";
+
+  const maxTimeStep = isCenario
+    ? 30 * 24   // 30 dias = 720 horas
+    : 72;
+
+  const tickInterval = isCenario
+    ? 10 * 24   // marcador a cada 10 dias
+    : 24;
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -55,10 +62,33 @@ export default function LayerCorrente({
       try {
         const timestep = String(timeStep).padStart(3, "0");
 
-        const [respVelocidade, respDirecao] = await Promise.all([
-          fetch(`/data/corrente_velocidade_timestep_${timestep}.geojson`, { signal }),
-          fetch(`/data/corrente_direcao_timestep_${timestep}.geojson`, { signal })
-        ]);
+    let filenameVelocidade;
+    let filenameDirecao;
+
+    if (fonteDados === "cenario1") {
+      filenameVelocidade =
+        `/data/maio_2024_corrente_velocidade_timestep_${timestep}.geojson`;
+
+      filenameDirecao =
+        `/data/maio_2024_corrente_direcao_timestep_${timestep}.geojson`;
+    } else {
+      filenameVelocidade =
+        `/data/corrente_velocidade_timestep_${timestep}.geojson`;
+
+      filenameDirecao =
+        `/data/corrente_direcao_timestep_${timestep}.geojson`;
+    }
+
+    const [respVelocidade, respDirecao] = await Promise.all([
+      fetch(filenameVelocidade, { signal }),
+      fetch(filenameDirecao, { signal })
+    ]);
+
+    if (!respVelocidade.ok || !respDirecao.ok) {
+      throw new Error(
+        `Arquivos de corrente do timestep_${timestep} não foram encontrados.`
+      );
+    }
 
         // Se o servidor retornar erro 404 (página html), joga para o catch e evita o crash do JSON
         if (!respVelocidade.ok || !respDirecao.ok) {
@@ -118,7 +148,13 @@ setGeojsonDirecao(direcaoNormalizada);
 
     const carregarDataBase = async () => {
       try {
-        const response = await fetch(`/data/corrente_velocidade_timestep_000.geojson`);
+        const filenameBase =
+        fonteDados === "cenario1"
+          ? `/data/maio_2024_corrente_velocidade_timestep_000.geojson`
+          : `/data/corrente_velocidade_timestep_000.geojson`;
+
+        const response = await fetch(filenameBase);
+
 
         if (!response.ok) {
           throw new Error("Arquivo timestep_000.geojson de velocidade de referência não encontrado.");

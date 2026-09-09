@@ -182,106 +182,303 @@ export default function LayerNivel({
         </Marker>
       ))}
 
-      {/* Legenda das estações */}
+      {/* Container lateral: Estações + Legendas */}
 {fonteDados === "previsao" && (
   <div
     style={{
       position: "absolute",
       right: isMobile ? "10px" : "20px",
-
-      top: isMobile ? "310px" : "430px",
-
+      top: isMobile ? "10px" : "20px",
       zIndex: 1000,
 
-      background: "rgba(255, 255, 255, 0.8)",
-      backdropFilter: "blur(8px)",
-      padding: isMobile ? "8px 10px" : "12px 14px",
-      borderRadius: "12px",
-      boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.4)",
-
       width: isMobile ? "150px" : "210px",
+
+      display: "flex",
+      flexDirection: "column",
+      gap: isMobile ? "8px" : "10px",
 
       fontFamily: "system-ui, -apple-system, sans-serif",
       color: "#2A3D59",
     }}
   >
-    {/* Título */}
-    <div
-      style={{
-        fontSize: isMobile ? "10px" : "12px",
-        fontWeight: "700",
-        textAlign: "left",
-        marginBottom: isMobile ? "6px" : "10px",
-        color: "#2A3D59",
-      }}
-    >
-      LEGENDA
-    </div>
+    {/* ===================================================== */}
+    {/* LISTA DE ESTAÇÕES */}
+    {/* ===================================================== */}
 
-    {/* Rede de Monitoramento */}
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "7px",
-        marginBottom: "6px",
+        width: "100%",
+        boxSizing: "border-box",
+
+        background: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(8px)",
+        padding: isMobile ? "8px" : "12px",
+        borderRadius: "12px",
+        boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.4)",
       }}
     >
+      {/* Título */}
       <div
         style={{
-          width: "16px",
-          height: "16px",
-          borderRadius: "50%",
-          backgroundColor: "#2A3D59",
-          border: "3px solid white",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
-          flexShrink: 0,
+          fontSize: isMobile ? "10px" : "12px",
+          fontWeight: "700",
+          marginBottom: isMobile ? "6px" : "10px",
+          color: "#2A3D59",
+        }}
+      >
+        ESTAÇÕES
+      </div>
+
+      {/* Botões */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: isMobile ? "3px" : "5px",
+        }}
+      >
+        {[...STATIONS]
+          .sort((a, b) =>
+            a.nome.localeCompare(b.nome, "pt-BR", {
+              sensitivity: "base",
+            })
+          )
+          .map((station) => {
+            const defesaCivil =
+              station.id === 8 || station.id === 9;
+
+            const selecionada =
+              estacaoSelecionada?.id === station.id;
+
+            const stationColor = defesaCivil
+              ? "#F9A825"
+              : "#2A3D59";
+
+            return (
+              <button
+                key={station.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selecionarEstacao(station);
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+
+                  background: selecionada
+                    ? "rgba(42, 61, 89, 0.10)"
+                    : "rgba(255,255,255,0.55)",
+
+                  border: selecionada
+                    ? `1px solid ${stationColor}`
+                    : "1px solid rgba(42,61,89,0.08)",
+
+                  borderRadius: "7px",
+
+                  padding: isMobile
+                    ? "5px 6px"
+                    : "7px 8px",
+
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.15s ease",
+                  fontFamily: "inherit",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: isMobile ? "9px" : "12px",
+                    fontWeight: selecionada ? "700" : "600",
+                    color: stationColor,
+
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {station.nome}
+                </span>
+              </button>
+            );
+          })}
+      </div>
+    </div>
+
+    {/* ===================================================== */}
+    {/* LEGENDA DOS PONTOS */}
+    {/* ===================================================== */}
+
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+
+        background: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(8px)",
+        padding: isMobile ? "8px" : "12px",
+        borderRadius: "12px",
+        boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.4)",
+      }}
+    >
+      {/* Título */}
+      <div
+        style={{
+          fontSize: isMobile ? "10px" : "12px",
+          fontWeight: "700",
+          marginBottom: isMobile ? "7px" : "10px",
+          color: "#2A3D59",
+        }}
+      >
+        LEGENDA
+      </div>
+
+      {/* Rede de Monitoramento */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "7px" : "9px",
+          marginBottom: isMobile ? "6px" : "8px",
+        }}
+      >
+        <div
+          style={{
+            width: "16px",
+            height: "16px",
+            borderRadius: "50%",
+            backgroundColor: "#2A3D59",
+            border: "3px solid white",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+            boxSizing: "border-box",
+            flexShrink: 0,
+          }}
+        />
+
+        <span
+          style={{
+            fontSize: isMobile ? "10px" : "12px",
+            fontWeight: "600",
+            color: "#2A3D59",
+          }}
+        >
+          Rede de Monitoramento
+        </span>
+      </div>
+
+      {/* Defesa Civil */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "7px" : "9px",
+        }}
+      >
+        <div
+          style={{
+            width: "16px",
+            height: "16px",
+            borderRadius: "50%",
+            backgroundColor: "#F9A825",
+            border: "3px solid white",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+            boxSizing: "border-box",
+            flexShrink: 0,
+          }}
+        />
+
+        <span
+          style={{
+            fontSize: isMobile ? "10px" : "12px",
+            fontWeight: "600",
+            color: "#F9A825",
+          }}
+        >
+          Defesa Civil
+        </span>
+      </div>
+    </div>
+
+    {/* ===================================================== */}
+    {/* LEGENDA DE CORES - NÍVEL */}
+    {/* ===================================================== */}
+
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+
+        background: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(8px)",
+
+        padding: isMobile
+          ? "8px 10px"
+          : "12px 14px",
+
+        borderRadius: "12px",
+        boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.4)",
+      }}
+    >
+      {/* Título */}
+      <div
+        style={{
+          fontSize: isMobile ? "10px" : "12px",
+          fontWeight: "700",
+          textAlign: "left",
+          marginBottom: isMobile ? "6px" : "8px",
+          color: "#2A3D59",
+        }}
+      >
+        NÍVEL (cm)
+      </div>
+
+      {/* Gradiente */}
+      <div
+        style={{
+          width: "100%",
+          height: isMobile ? "10px" : "14px",
+          borderRadius: "4px",
+
+          background:
+            "linear-gradient(to right, #440154, #443983, #31688E, #21908C, #20A387, #35B779, #4EA53B, #B4DE2C, #FDE725, #F8961E, #DC2F02)",
+
+          border: "1px solid rgba(42, 61, 89, 0.15)",
+          boxSizing: "border-box",
         }}
       />
-      <span
-        style={{
-          fontSize: isMobile ? "10px" : "12px",
-          fontWeight: "600",
-        }}
-      >
-        Rede de Monitoramento
-      </span>
-    </div>
 
-    {/* Defesa Civil */}
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "7px",
-      }}
-    >
+      {/* Valores */}
       <div
-      style={{
-        width: "16px",
-        height: "16px",
-        borderRadius: "50%",
-        backgroundColor: "#F9A825",
-        border: "3px solid white",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
-        flexShrink: 0,
-      }}
-    />
-      <span
         style={{
-          fontSize: isMobile ? "10px" : "12px",
+          display: "flex",
+          justifyContent: "space-between",
+          width: "100%",
+          marginTop: "5px",
+
+          fontSize: isMobile ? "9px" : "11px",
           fontWeight: "600",
+          color: "#2A3D59",
         }}
       >
-        Defesa Civil
-      </span>
+        <span>-50</span>
+        <span>0</span>
+        <span>50</span>
+        <span>100</span>
+        <span>150</span>
+        <span>200</span>
+      </div>
     </div>
   </div>
 )}
 
-    {/* Lista de estações */}
-{fonteDados === "previsao" && (
+{/* =========================================================
+    LEGENDA DE NÍVEL - CENÁRIO
+========================================================= */}
+{isCenario && (
   <div
     style={{
       position: "absolute",
@@ -291,15 +488,13 @@ export default function LayerNivel({
 
       background: "rgba(255, 255, 255, 0.8)",
       backdropFilter: "blur(8px)",
-      padding: isMobile ? "8px" : "12px",
-      borderRadius: "12px",
-      boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
       border: "1px solid rgba(255, 255, 255, 0.4)",
 
-      width: isMobile ? "150px" : "210px",
+      padding: isMobile ? "8px 10px" : "12px 14px",
+      borderRadius: "12px",
 
+      boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
       fontFamily: "system-ui, -apple-system, sans-serif",
-      color: "#2A3D59",
     }}
   >
     {/* Título */}
@@ -307,166 +502,63 @@ export default function LayerNivel({
       style={{
         fontSize: isMobile ? "10px" : "12px",
         fontWeight: "700",
+        textAlign: "center",
         marginBottom: isMobile ? "6px" : "10px",
         color: "#2A3D59",
       }}
     >
-      ESTAÇÕES
+      NÍVEL (cm)
     </div>
 
-    {/* Botões das estações */}
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
-        gap: isMobile ? "3px" : "5px",
+        alignItems: "center",
+        gap: isMobile ? "6px" : "10px",
       }}
     >
-      {[...STATIONS]
-        .sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", {
-            sensitivity: "base",
-          })
-        )
-        .map((station) => {
-          const defesaCivil =
-            station.id === 8 || station.id === 9;
+      {/* Barra vertical */}
+      <div
+        style={{
+          width: isMobile ? "10px" : "14px",
+          height: isMobile ? "180px" : "300px",
 
-          const selecionada =
-            estacaoSelecionada?.id === station.id;
+          borderRadius: "4px",
 
-          const stationColor = defesaCivil
-            ? "#F9A825"
-            : "#2A3D59";
+          background:
+            "linear-gradient(to top, #440154, #443983, #31688E, #21908C, #20A387, #35B779, #4EA53B, #B4DE2C, #FDE725, #F8961E, #DC2F02)",
 
-          return (
-            <button
-              key={station.id}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                selecionarEstacao(station);
-              }}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: isMobile ? "6px" : "8px",
+          border: "1px solid rgba(42, 61, 89, 0.15)",
+          boxSizing: "border-box",
+        }}
+      />
 
-                background: selecionada
-                  ? "rgba(42, 61, 89, 0.10)"
-                  : "rgba(255,255,255,0.55)",
+      {/* Valores */}
+      <div
+        style={{
+          height: isMobile ? "180px" : "300px",
 
-                border: selecionada
-                  ? `1px solid ${stationColor}`
-                  : "1px solid rgba(42,61,89,0.08)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
 
-                borderRadius: "7px",
-
-                padding: isMobile
-                  ? "5px 6px"
-                  : "7px 8px",
-
-                cursor: "pointer",
-                textAlign: "left",
-
-                transition: "all 0.15s ease",
-
-                fontFamily: "inherit",
-              }}
-            >
-              {/* Nome */}
-              <span
-                style={{
-                  fontSize: isMobile ? "9px" : "12px",
-                  fontWeight: selecionada ? "700" : "600",
-                  color: stationColor,
-
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {station.nome}
-              </span>
-            </button>
-          );
-        })}
+          fontSize: isMobile ? "9px" : "11px",
+          fontWeight: "600",
+          color: "#2A3D59",
+        }}
+      >
+        <span>200</span>
+        <span>150</span>
+        <span>100</span>
+        <span>50</span>
+        <span>0</span>
+        <span>-50</span>
+      </div>
     </div>
   </div>
 )}
-      {/* Legenda de cores - Nível */}
-      <div
-        style={{
-          position: "absolute",
-          right: isMobile ? "10px" : "20px",
-          top: isMobile ? "430px" : "545px",
-          zIndex: 1000,
 
-          background: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(8px)",
 
-          width: isMobile ? "150px" : "210px",
-          boxSizing: "border-box",
-
-          padding: isMobile ? "8px 10px" : "12px 14px",
-
-          border: "1px solid rgba(255, 255, 255, 0.4)",
-          borderRadius: "12px",
-          boxShadow: "0 6px 20px rgba(42, 61, 89, 0.1)",
-
-          fontFamily: "system-ui, -apple-system, sans-serif",
-        }}
-      >
-        {/* Título */}
-        <div
-          style={{
-            fontSize: isMobile ? "10px" : "12px",
-            fontWeight: "700",
-            textAlign: "left",
-            marginBottom: isMobile ? "6px" : "8px",
-            color: "#2A3D59",
-          }}
-        >
-          NÍVEL (cm)
-        </div>
-
-        {/* Barra horizontal */}
-        <div
-          style={{
-            width: "100%",
-            height: isMobile ? "10px" : "14px",
-            borderRadius: "4px",
-
-            background:
-              "linear-gradient(to right, #440154, #443983, #31688E, #21908C, #20A387, #35B779, #4EA53B, #B4DE2C, #FDE725, #F8961E, #DC2F02)",
-
-            border: "1px solid rgba(42, 61, 89, 0.15)",
-            boxSizing: "border-box",
-          }}
-        />
-
-        {/* Valores */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            width: "100%",
-            marginTop: "5px",
-
-            fontSize: isMobile ? "9px" : "11px",
-            fontWeight: "600",
-            color: "#2A3D59",
-          }}
-        >
-          <span>-50</span>
-          <span>0</span>
-          <span>50</span>
-          <span>100</span>
-          <span>150</span>
-          <span>200</span>
-        </div>
-      </div>
 
     {/* Timeline Interativa */}
     <div

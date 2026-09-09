@@ -36,11 +36,12 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
   const drawerWidth = isMobile ? 240 : (open ? 240 : 80);
   const effectiveOpen = isMobile ? true : open;
 
-  const menuItems = [ { label: "Nível", value: "nivel", icon: <WaterIcon />, }, 
-    { label: "Vazão", value: "vazao", icon: <SouthEastIcon />, }, 
-    //{ label: "Salinidade", value: "salinidade", icon: <OpacityIcon />, }, 
-    { label: "Corrente", value: "corrente", icon: <TsunamiIcon />, }, 
-    { label: "Vento", value: "vento", icon: <AirIcon />, }, ];
+  const menuItems = [
+  { label: "Nível", value: "nivel", icon: <WaterIcon /> },
+  { label: "Vazão", value: "vazao", icon: <SouthEastIcon /> },
+  { label: "Corrente", value: "corrente", icon: <TsunamiIcon /> },
+  { label: "Vento", value: "vento", icon: <AirIcon /> },
+];
 
   const textStyle = {
   textAlign: open ? "left" : "center",
@@ -200,7 +201,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
         ))}
        
         </List>
-         {/* <Box
+       <Box
           sx={{
             px: 2,
             py: 1,
@@ -217,11 +218,11 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
           >
             {open ? "Cenários" : "Cenários"}
           </Typography> 
-         </Box>  */}
+         </Box> 
         
         {/* Cenário 1 */}
         <List>
-          {/* <ListItemButton
+        <ListItemButton
             onClick={() => {
                         if (!open) {
                           setOpen(true);
@@ -271,7 +272,9 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
           
           <Collapse in={openCenario1}>
           <List disablePadding>
-            {menuItems.map((item) => (
+            {menuItems
+  .filter((item) => item.value !== "vazao")
+  .map((item) => (
               <ListItemButton
                 key={item.value}
                 selected={
@@ -304,7 +307,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
               </ListItemButton>
             ))} 
            </List> 
-         </Collapse> */}
+         </Collapse>
         
 
         {/* Cenário 2
