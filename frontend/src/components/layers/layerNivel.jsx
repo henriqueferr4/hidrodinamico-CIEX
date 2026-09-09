@@ -98,21 +98,40 @@ export default function LayerNivel({
       });
 
     return () => controller.abort();
-  }, [timeStep, setDataFormatada]);
+  }, [timeStep, fonteDados, setDataFormatada]);
 
   useEffect(() => {
-    fetch(`/data/nivel_timestep_000.geojson`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) return;
-        const date = data.date || data.features?.[0]?.properties?.date;
-        const hour = data.hour || data.features?.[0]?.properties?.hour;
-        if (date && hour) {
-          setDataBaseTimeline(new Date(`${date}T${hour}`));
-        }
-      })
-      .catch((err) => console.error("Erro ao iniciar timeline de nível:", err));
-  }, []);
+  const arquivoBase =
+    fonteDados === "cenario1"
+      ? "/data/maio_2024_nivel_timestep_000.geojson"
+      : "/data/nivel_timestep_000.geojson";
+
+  fetch(arquivoBase)
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (!data) return;
+
+      const date =
+        data.date ||
+        data.features?.[0]?.properties?.date;
+
+      const hour =
+        data.hour ||
+        data.features?.[0]?.properties?.hour;
+
+      if (date && hour) {
+        setDataBaseTimeline(
+          new Date(`${date}T${hour}`)
+        );
+      }
+    })
+    .catch((err) =>
+      console.error(
+        "Erro ao iniciar timeline de nível:",
+        err
+      )
+    );
+}, [fonteDados]);
 
   const selecionarEstacao = (station) => {
     setEstacaoSelecionada({
@@ -565,11 +584,16 @@ export default function LayerNivel({
       style={{
         position: "absolute",
         bottom: isMobile ? "28px" : "20px",
+        // Centralização real na tela
         left: "50%",
         transform: "translateX(-50%)",
 
-        width: isMobile ? "94%" : "68%",
-        minWidth: isMobile ? "0" : "520px",
+        // Limita a largura para manter espaço nas laterais
+        width: isMobile
+          ? "94%"
+          : "min(68%, calc(100% - 520px))",
+
+        minWidth: 0,
 
         zIndex: 1000,
 

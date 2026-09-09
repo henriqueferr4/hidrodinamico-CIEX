@@ -142,33 +142,44 @@ setGeojsonDirecao(direcaoNormalizada);
     return () => controller.abort();
   }, [timeStep, fonteDados, setDataFormatada]);
 
-  // 2. EFFECT DA DATA BASE DA TIMELINE
-  useEffect(() => {
+    useEffect(() => {
     if (!fonteDados) return;
 
     const carregarDataBase = async () => {
       try {
         const filenameBase =
-        fonteDados === "cenario1"
-          ? `/data/maio_2024_corrente_velocidade_timestep_000.geojson`
-          : `/data/corrente_velocidade_timestep_000.geojson`;
+          fonteDados === "cenario1"
+            ? `/data/maio_2024_corrente_velocidade_timestep_000.geojson`
+            : `/data/corrente_velocidade_timestep_000.geojson`;
 
         const response = await fetch(filenameBase);
 
-
         if (!response.ok) {
-          throw new Error("Arquivo timestep_000.geojson de velocidade de referência não encontrado.");
+          throw new Error(
+            "Arquivo timestep_000.geojson de corrente não encontrado."
+          );
         }
 
         const data = await response.json();
-        const date = data.date || data.features?.[0]?.properties?.date;
-        const hour = data.hour || data.features?.[0]?.properties?.hour;
+
+        const date =
+          data.date ||
+          data.features?.[0]?.properties?.date;
+
+        const hour =
+          data.hour ||
+          data.features?.[0]?.properties?.hour;
 
         if (date && hour) {
-          setDataBaseTimeline(new Date(`${date}T${hour}`));
+          setDataBaseTimeline(
+            new Date(`${date}T${hour}`)
+          );
         }
       } catch (error) {
-        console.error("Erro ao iniciar timeline de vento:", error.message);
+        console.error(
+          "Erro ao iniciar timeline de corrente:",
+          error.message
+        );
       }
     };
 
@@ -245,11 +256,16 @@ setGeojsonDirecao(direcaoNormalizada);
       style={{
         position: "absolute",
         bottom: isMobile ? "28px" : "20px",
+        // Centralização real na tela
         left: "50%",
         transform: "translateX(-50%)",
 
-        width: isMobile ? "94%" : "68%",
-        minWidth: isMobile ? "0" : "520px",
+        // Limita a largura para manter espaço nas laterais
+        width: isMobile
+          ? "94%"
+          : "min(68%, calc(100% - 520px))",
+
+        minWidth: 0,
 
         zIndex: 1000,
 
