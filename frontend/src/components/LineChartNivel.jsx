@@ -670,7 +670,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               }
               strokeWidth={2.5}
               dot={false}
-              connectNulls={false}
+              connectNulls={true}
               isAnimationActive={false}
             />
 
@@ -683,7 +683,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                 stroke="#7B1FA2"
                 strokeWidth={2.5}
                 dot={false}
-                connectNulls={false}
+                connectNulls={true}
                 isAnimationActive={false}
               />
             )}
