@@ -57,7 +57,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
 
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
-  const LIMIAR_GAP_OBSERVADO_MS = 60 * 60 * 1000; // 1 hora
+  const LIMIAR_GAP_OBSERVADO_MS = 2 * 60 * 60 * 1000; // 2 horas
 
   // ---------------------------------------------------------------------
   // EIXO X (tempo) — domínio baseado no range de datas com previsão
@@ -339,31 +339,37 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
         setData(listaUnificada);
 
         // -----------------------------------------------------------------
-        // QUEBRA DE LINHA SOMENTE PARA OBSERVADO HIDROSENS
-        // Insere pontos "nulos" onde houver gaps > 1h na série HidroSens,
-        // para que a linha não seja interpolada indevidamente
+        // QUEBRA DAS LINHAS OBSERVADAS QUANDO HOUVER GAP > 2 HORAS
         // -----------------------------------------------------------------
-        const pontosHidrosens = listaUnificada
+
+        const pontosDeQuebra = [];
+
+        // ================================================================
+        // OBSERVADO PRINCIPAL — CIEX / DEFESA CIVIL
+        // ================================================================
+
+        const pontosObservados = listaUnificada
           .filter(
             (item) =>
-              item.observadoHidrosens !== null && item.observadoHidrosens !== undefined
+              item.observado !== null &&
+              item.observado !== undefined
           )
           .sort((a, b) => a.timestamp - b.timestamp);
 
-        const pontosDeQuebraHidrosens = [];
-
-        pontosHidrosens.forEach((ponto, index) => {
+        pontosObservados.forEach((ponto, index) => {
           if (index === 0) return;
 
-          const anterior = pontosHidrosens[index - 1];
+          const anterior = pontosObservados[index - 1];
           const gap = ponto.timestamp - anterior.timestamp;
 
           if (gap > LIMIAR_GAP_OBSERVADO_MS) {
-            pontosDeQuebraHidrosens.push({
+            pontosDeQuebra.push({
               timestamp: anterior.timestamp + 1,
               dataOriginal: null,
+
+              // quebra apenas o observado principal
               observado: null,
-              // quebra somente do HidroSens
+
               observadoHidrosens: null,
               previsao: null,
               previsaoMin: null,
@@ -374,9 +380,55 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
           }
         });
 
-        const listaComQuebras = [...listaUnificada, ...pontosDeQuebraHidrosens].sort(
-          (a, b) => a.timestamp - b.timestamp
-        );
+
+        // ================================================================
+        // OBSERVADO HIDROSENS — somente estação 7
+        // ================================================================
+
+        if (estacaoSelecionada.id === 7) {
+          const pontosHidrosens = listaUnificada
+            .filter(
+              (item) =>
+                item.observadoHidrosens !== null &&
+                item.observadoHidrosens !== undefined
+            )
+            .sort((a, b) => a.timestamp - b.timestamp);
+
+          pontosHidrosens.forEach((ponto, index) => {
+            if (index === 0) return;
+
+            const anterior = pontosHidrosens[index - 1];
+            const gap = ponto.timestamp - anterior.timestamp;
+
+            if (gap > LIMIAR_GAP_OBSERVADO_MS) {
+              pontosDeQuebra.push({
+                timestamp: anterior.timestamp + 1,
+                dataOriginal: null,
+
+                observado: null,
+
+                // quebra somente HidroSens
+                observadoHidrosens: null,
+
+                previsao: null,
+                previsaoMin: null,
+                previsaoMax: null,
+                faixaErro: null,
+                cotaInundacao,
+              });
+            }
+          });
+        }
+
+
+        // ================================================================
+        // JUNTA DADOS NORMAIS + PONTOS DE QUEBRA
+        // ================================================================
+
+        const listaComQuebras = [
+          ...listaUnificada,
+          ...pontosDeQuebra,
+        ].sort((a, b) => a.timestamp - b.timestamp);
 
         setData(listaComQuebras);
         setLoading(false);
@@ -618,7 +670,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               }
               strokeWidth={2.5}
               dot={false}
-              connectNulls={true}
+              connectNulls={false}
               isAnimationActive={false}
             />
 
@@ -631,7 +683,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                 stroke="#7B1FA2"
                 strokeWidth={2.5}
                 dot={false}
-                connectNulls={true}
+                connectNulls={false}
                 isAnimationActive={false}
               />
             )}
