@@ -15,6 +15,7 @@ const STATIONS = [
   { id: 9, nome: "Colônia Z3", latitude: -31.702306, longitude: -52.156611},
   { id: 10, nome: "Viamão (Reserva Estadual)", latitude: -30.358806, longitude: -51.046306},
   { id: 11, nome: "Viamão (Itapuã)", latitude: -30.282613, longitude: -51.021316},
+  { id: 12, nome: "Saco da Mangueira", latitude: -32.050917, longitude: -52.109917},
 ];
 
 const DEFESA_CIVIL_IDS = [8, 9, 10, 11];

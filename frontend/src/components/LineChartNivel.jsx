@@ -32,7 +32,8 @@ const SENSOR_POR_ID = {
   8: "Mostardas_DC",
   9: "ColoniaZ3_DC",
   10: "Itapua_DC",
-  11: "Viamao_DC" 
+  11: "Viamao_DC", 
+  12: "Saco_da_Mangueira", 
 };
 
 // Cota de inundação (cm) por ID de estação
@@ -47,6 +48,8 @@ const COTA_INUNDACAO_POR_ID = {
 // Estações que não devem plotar a linha da cota de inundação no gráfico
 const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7, 8, 9, 10, 11];
 
+const ESTACOES_DEFESA_CIVIL = [8, 9, 10, 11];
+
 const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   // ---------------------------------------------------------------------
   // ESTADOS E REFS
@@ -59,6 +62,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
 
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
+  const isDefesaCivil = ESTACOES_DEFESA_CIVIL.includes(estacaoSelecionada.id);
   const LIMIAR_GAP_OBSERVADO_MS = 2 * 60 * 60 * 1000; // 2 horas
 
   // ---------------------------------------------------------------------
@@ -631,45 +635,35 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                 color: "#2A3D59",
               }}
               payload={[
-                {
-                  value:
-                    estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
-                      ? "Observado - DC"
-                      : "Observado - CIEX",
-                  type: "circle",
-                  color:
-                    estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
-                      ? "#F9A825"
-                      : "#ff7300",
-                },
-                { value: "Previsão", type: "circle", color: "#2A3D59" },
-                { value: "Erro médio", type: "rect", color: "#808080" },
-                ...(cotaInundacao !== null
-                  ? [
-                      {
-                        value: `Cota de Inundação: ${cotaInundacao} cm`,
-                        type: "none",
-                        color: "#2e7d32",
-                      },
-                    ]
-                  : []),
-              ]}
+              {
+                value: isDefesaCivil
+                  ? "Observado - DC"
+                  : "Observado - CIEX",
+                type: "circle",
+                color: isDefesaCivil
+                  ? "#F9A825"
+                  : "#ff7300",
+              },
+              { value: "Previsão", type: "circle", color: "#2A3D59" },
+              { value: "Erro médio", type: "rect", color: "#808080" },
+              ...(cotaInundacao !== null
+                ? [
+                    {
+                      value: `Cota de Inundação: ${cotaInundacao} cm`,
+                      type: "none",
+                      color: "#2e7d32",
+                    },
+                  ]
+                : []),
+            ]}
             />
 
             {/* Linha: observado */}
             <Line
               type="monotone"
               dataKey="observado"
-              name={
-                estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
-                  ? "Observado - DC"
-                  : "Observado - CIEX"
-              }
-              stroke={
-                estacaoSelecionada.id === 8 || estacaoSelecionada.id === 9
-                  ? "#F9A825"
-                  : "#ff7300"
-              }
+              name={isDefesaCivil ? "Observado - DC" : "Observado - CIEX"}
+              stroke={isDefesaCivil ? "#F9A825" : "#ff7300"}
               strokeWidth={2.5}
               dot={false}
               connectNulls={true}
