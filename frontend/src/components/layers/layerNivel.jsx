@@ -13,7 +13,14 @@ const STATIONS = [
   { id: 7, nome: "Pelotas", latitude: -31.764725, longitude: -52.226296},
   { id: 8, nome: "Mostardas", latitude: -31.020614, longitude: -50.967112},
   { id: 9, nome: "Colônia Z3", latitude: -31.702306, longitude: -52.156611},
+  { id: 10, nome: "Viamão (Reserva Estadual)", latitude: -30.358806, longitude: -51.046306},
+  { id: 11, nome: "Viamão (Itapuã)", latitude: -30.282613, longitude: -51.021316},
 ];
+
+const DEFESA_CIVIL_IDS = [8, 9, 10, 11];
+
+const isDefesaCivil = (stationId) =>
+  DEFESA_CIVIL_IDS.includes(stationId);
 
 export default function LayerNivel({
   timeStep,
@@ -186,9 +193,9 @@ export default function LayerNivel({
                 height: estacaoSelecionada?.id === station.id ? "24px" : "16px",
                 borderRadius: "50%",
                 backgroundColor:
-                station.id === 8 || station.id === 9
-                  ? "#F9A825"
-                  : "#2A3D59",
+                  isDefesaCivil(station.id)
+                    ? "#F9A825"
+                    : "#2A3D59",
                 border: "3px solid white",
                 boxShadow:
                   estacaoSelecionada?.id === station.id
@@ -264,8 +271,7 @@ export default function LayerNivel({
             })
           )
           .map((station) => {
-            const defesaCivil =
-              station.id === 8 || station.id === 9;
+            const defesaCivil = isDefesaCivil(station.id);
 
             const selecionada =
               estacaoSelecionada?.id === station.id;
@@ -413,7 +419,7 @@ export default function LayerNivel({
           style={{
             fontSize: isMobile ? "10px" : "12px",
             fontWeight: "600",
-            color: "#F9A825",
+            color: "#2A3D59",
           }}
         >
           Defesa Civil

@@ -30,7 +30,9 @@ const SENSOR_POR_ID = {
   6: "Tavares",
   7: "Pelotas",
   8: "Mostardas_DC",
-  9: "ColoniaZ3_DC"
+  9: "ColoniaZ3_DC",
+  10: "Itapua_DC",
+  11: "Viamao_DC" 
 };
 
 // Cota de inundação (cm) por ID de estação
@@ -43,7 +45,7 @@ const COTA_INUNDACAO_POR_ID = {
 };
 
 // Estações que não devem plotar a linha da cota de inundação no gráfico
-const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7, 8, 9];
+const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7, 8, 9, 10, 11];
 
 const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
   // ---------------------------------------------------------------------
