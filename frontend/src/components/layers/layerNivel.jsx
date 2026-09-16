@@ -12,7 +12,7 @@ const STATIONS = [
   { id: 6, nome: "Tavares", latitude: -31.28002, longitude: -51.15804 },
   { id: 7, nome: "Pelotas", latitude: -31.764725, longitude: -52.226296},
   { id: 8, nome: "Mostardas", latitude: -31.020614, longitude: -50.967112},
-  { id: 9, nome: "Colônia Z3", latitude: -31.702306, longitude: -52.156611},
+  // { id: 9, nome: "Colônia Z3", latitude: -31.702306, longitude: -52.156611},
   { id: 10, nome: "Viamão (Reserva Estadual)", latitude: -30.358806, longitude: -51.046306},
   { id: 11, nome: "Viamão (Itapuã)", latitude: -30.282613, longitude: -51.021316},
   { id: 12, nome: "Saco da Mangueira", latitude: -32.050917, longitude: -52.109917},
@@ -30,7 +30,8 @@ export default function LayerNivel({
   setDataFormatada,
   estacaoSelecionada,
   setEstacaoSelecionada,
-  fonteDados
+  fonteDados,
+  mapRef
 }) {
   const [geojson, setGeojson] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -141,15 +142,35 @@ export default function LayerNivel({
     );
 }, [fonteDados]);
 
-  const selecionarEstacao = (station) => {
-    setEstacaoSelecionada({
-      id: station.id,
-      nome: station.nome,
-      latitude: station.latitude,
-      longitude: station.longitude
-    });
-  };
+  const selecionarEstacao = (station, moverMapa = false) => {
+  setEstacaoSelecionada({
+    id: station.id,
+    nome: station.nome,
+    latitude: station.latitude,
+    longitude: station.longitude
+  });
 
+  // Move o mapa somente quando solicitado
+  if (moverMapa && mapRef?.current) {
+    mapRef.current.flyTo({
+      center: [
+        station.longitude,
+        station.latitude
+      ],
+
+      // Mantém o zoom atual, evitando zoom desnecessário
+      zoom: Math.max(mapRef.current.getZoom(), 8),
+
+      duration: 1000,
+      essential: true,
+
+      // Deixa espaço para o gráfico
+      offset: isMobile
+        ? [0, -80]
+        : [-250, 180]
+    });
+  }
+};
   
   return (
     <>
@@ -168,26 +189,41 @@ export default function LayerNivel({
             }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
           >
-          {/* <div
-          style={{
-            background: "rgba(255, 255, 255, 0.9)",
-            color:
-            station.id === 8 || station.id === 9
-              ? "#F9A825"
-              : "#2A3D59",
-            padding: isMobile ? "2px 5px" : "3px 7px",
-            borderRadius: "5px",
-            fontSize: isMobile ? "8px" : "13px",
-            fontWeight: "700",
-            whiteSpace: "nowrap",
-            marginBottom: "4px",
-            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
-            border: "1px solid rgba(42, 61, 89, 0.15)",
-            pointerEvents: "none"
-          }}
-        >
-          {station.nome}
-        </div> */}
+          <div
+  style={{
+    color: isDefesaCivil(station.id)
+      ? "#9A6700"
+      : "#2A3D59",
+
+    fontSize: isMobile ? "7px" : "10px",
+    fontWeight: "600",
+
+    whiteSpace: "nowrap",
+
+    marginBottom: "3px",
+
+    // melhora leitura sem criar uma caixa
+    textShadow:
+      "0 0 2px white, 0 0 2px white, 0 0 3px rgba(255,255,255,0.9)",
+
+    pointerEvents: "none",
+
+    // evita chamar muita atenção
+    opacity: 0.85,
+
+    // deslocamentos específicos para evitar sobreposição
+    transform:
+      station.id === 5
+        ? "translate(-28px, 0)"
+        : station.id === 10
+        ? "translate(35px, -3px)"
+        : station.id === 11
+        ? "translate(32px, 2px)"
+        : "none",
+  }}
+>
+  {station.nome}
+</div>
             <div
               style={{
                 width: estacaoSelecionada?.id === station.id ? "24px" : "16px",
@@ -287,7 +323,7 @@ export default function LayerNivel({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  selecionarEstacao(station);
+                  selecionarEstacao(station, true);
                 }}
                 style={{
                   width: "100%",

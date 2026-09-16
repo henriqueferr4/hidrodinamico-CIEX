@@ -14,6 +14,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { createPortal } from "react-dom";
 
+
 // Título de cada gráfico, por variável ativa
 const TITULOS_VARIAVEL = {
   nivel: "Previsão de Nível",
@@ -149,6 +150,7 @@ export default function MapView({
             dataFormatada={dataFormatada}
             setDataFormatada={setDataFormatada}
             fonteDados={fonteDados}
+            mapRef={mapRef}
           />
         )}
 
