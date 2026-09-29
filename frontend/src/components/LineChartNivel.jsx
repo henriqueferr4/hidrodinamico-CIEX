@@ -46,7 +46,7 @@ const COTA_INUNDACAO_POR_ID = {
 };
 
 // Estações que não devem plotar a linha da cota de inundação no gráfico
-const ESTACOES_LINHA_COTA_OCULTA = [3, 5, 6, 7, 8, 9, 10, 11];
+const ESTACOES_LINHA_COTA_OCULTA = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
 
 const ESTACOES_DEFESA_CIVIL = [8, 9, 10, 11];
 
@@ -621,41 +621,71 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               }}
             />
 
-            {/* Legenda customizada (itens fixos + cota de inundação condicional) */}
+            {/* Legenda própria: só mostra a cota se a estação tiver valor cadastrado */}
             <Legend
-              layout="horizontal"
-              align="center"
               verticalAlign="top"
-              iconType="circle"
-              iconSize={10}
-              wrapperStyle={{
-                paddingBottom: "15px",
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#2A3D59",
+              content={() => {
+                const itens = [
+                  { label: "Previsão", color: "#2A3D59", shape: "circle" },
+                  {
+                    label: isDefesaCivil ? "Observado - DC" : "Observado - CIEX",
+                    color: isDefesaCivil ? "#F9A825" : "#ff7300",
+                    shape: "circle",
+                  },
+                  ...(estacaoSelecionada.id === 7
+                    ? [{ label: "Observado - HidroSens UFPel", color: "#7B1FA2", shape: "circle" }]
+                    : []),
+                  { label: "Erro médio", color: "#808080", shape: "rect" },
+                  ...(cotaInundacao !== null
+                    ? [
+                        {
+                          label: `Cota de inundação (${cotaInundacao} cm)`,
+                          color: "#2e7d32",
+                          shape: "circle",
+                        },
+                      ]
+                    : []),
+                ];
+
+                return (
+                  <ul
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      gap: "16px",
+                      listStyle: "none",
+                      margin: 0,
+                      padding: "0 0 15px 0",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {itens.map((item) => (
+                      <li
+                        key={item.label}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          color: item.color,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            background: item.color,
+                            borderRadius: item.shape === "circle" ? "50%" : 2,
+                            display: "inline-block",
+                          }}
+                        />
+                        {item.label}
+                      </li>
+                    ))}
+                  </ul>
+                );
               }}
-              payload={[
-              {
-                value: isDefesaCivil
-                  ? "Observado - DC"
-                  : "Observado - CIEX",
-                type: "circle",
-                color: isDefesaCivil
-                  ? "#F9A825"
-                  : "#ff7300",
-              },
-              { value: "Previsão", type: "circle", color: "#2A3D59" },
-              { value: "Erro médio", type: "rect", color: "#808080" },
-              ...(cotaInundacao !== null
-                ? [
-                    {
-                      value: `Cota de Inundação: ${cotaInundacao} cm`,
-                      type: "none",
-                      color: "#2e7d32",
-                    },
-                  ]
-                : []),
-            ]}
             />
 
             {/* Linha: observado */}
@@ -666,7 +696,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               stroke={isDefesaCivil ? "#F9A825" : "#ff7300"}
               strokeWidth={2.5}
               dot={false}
-              connectNulls={true}
+              connectNulls={isDefesaCivil}
               isAnimationActive={false}
             />
 
