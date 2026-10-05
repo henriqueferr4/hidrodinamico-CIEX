@@ -32,8 +32,8 @@ const SENSOR_POR_ID = {
   8: "Mostardas_DC",
   9: "ColoniaZ3_DC",
   10: "Itapua_DC",
-  11: "Viamao_DC", 
-  12: "Saco_da_Mangueira", 
+  11: "Viamao_DC",
+  12: "Saco_da_Mangueira",
 };
 
 // Cota de inundação (cm) por ID de estação
@@ -58,7 +58,6 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erroMedio, setErroMedio] = useState(null);
-  const [dadosObservadoGrafico, setDadosObservadoGrafico] = useState([]);
 
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
@@ -342,101 +341,45 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
             };
           });
 
-        setData(listaUnificada);
-
         // -----------------------------------------------------------------
-        // QUEBRA DAS LINHAS OBSERVADAS QUANDO HOUVER GAP > 2 HORAS
+        // SÉRIE PARA A LINHA OBSERVADA (observadoLinha)
+        // - ponto observado: usa o próprio valor
+        // - timestamp sem observado entre dois observados a <= 2h: interpola
+        //   (evita que a linha seja cortada por timestamps só de previsão)
+        // - gap real (> 2h) ou fora do range observado: null (linha quebra)
         // -----------------------------------------------------------------
+        const obs = listaUnificada.filter(
+          (i) => i.observado !== null && i.observado !== undefined
+        );
 
-        const pontosDeQuebra = [];
-
-        // ================================================================
-        // OBSERVADO PRINCIPAL — CIEX / DEFESA CIVIL
-        // ================================================================
-
-        const pontosObservados = listaUnificada
-          .filter(
-            (item) =>
-              item.observado !== null &&
-              item.observado !== undefined
-          )
-          .sort((a, b) => a.timestamp - b.timestamp);
-
-        pontosObservados.forEach((ponto, index) => {
-          if (index === 0) return;
-
-          const anterior = pontosObservados[index - 1];
-          const gap = ponto.timestamp - anterior.timestamp;
-
-          if (gap > LIMIAR_GAP_OBSERVADO_MS) {
-            pontosDeQuebra.push({
-              timestamp: anterior.timestamp + 1,
-              dataOriginal: null,
-
-              // quebra apenas o observado principal
-              observado: null,
-
-              observadoHidrosens: null,
-              previsao: null,
-              previsaoMin: null,
-              previsaoMax: null,
-              faixaErro: null,
-              cotaInundacao,
-            });
+        const listaComLinha = listaUnificada.map((item) => {
+          if (item.observado !== null && item.observado !== undefined) {
+            return { ...item, observadoLinha: item.observado };
           }
+
+          // acha vizinhos observados (anterior e próximo)
+          let ant = null;
+          let prox = null;
+          for (let k = 0; k < obs.length; k++) {
+            if (obs[k].timestamp < item.timestamp) ant = obs[k];
+            else {
+              prox = obs[k];
+              break;
+            }
+          }
+
+          if (ant && prox && prox.timestamp - ant.timestamp <= LIMIAR_GAP_OBSERVADO_MS) {
+            const f = (item.timestamp - ant.timestamp) / (prox.timestamp - ant.timestamp);
+            return {
+              ...item,
+              observadoLinha: ant.observado + f * (prox.observado - ant.observado),
+            };
+          }
+
+          return { ...item, observadoLinha: null }; // gap real: a linha quebra
         });
 
-
-        // ================================================================
-        // OBSERVADO HIDROSENS — somente estação 7
-        // ================================================================
-
-        if (estacaoSelecionada.id === 7) {
-          const pontosHidrosens = listaUnificada
-            .filter(
-              (item) =>
-                item.observadoHidrosens !== null &&
-                item.observadoHidrosens !== undefined
-            )
-            .sort((a, b) => a.timestamp - b.timestamp);
-
-          pontosHidrosens.forEach((ponto, index) => {
-            if (index === 0) return;
-
-            const anterior = pontosHidrosens[index - 1];
-            const gap = ponto.timestamp - anterior.timestamp;
-
-            if (gap > LIMIAR_GAP_OBSERVADO_MS) {
-              pontosDeQuebra.push({
-                timestamp: anterior.timestamp + 1,
-                dataOriginal: null,
-
-                observado: null,
-
-                // quebra somente HidroSens
-                observadoHidrosens: null,
-
-                previsao: null,
-                previsaoMin: null,
-                previsaoMax: null,
-                faixaErro: null,
-                cotaInundacao,
-              });
-            }
-          });
-        }
-
-
-        // ================================================================
-        // JUNTA DADOS NORMAIS + PONTOS DE QUEBRA
-        // ================================================================
-
-        const listaComQuebras = [
-          ...listaUnificada,
-          ...pontosDeQuebra,
-        ].sort((a, b) => a.timestamp - b.timestamp);
-
-        setData(listaComQuebras);
+        setData(listaComLinha);
         setLoading(false);
       })
       .catch((error) => {
@@ -599,13 +542,19 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                   >
                     <p style={{ margin: 0, fontWeight: 600 }}>{`Data: ${dataFormatada}`}</p>
 
-                    {visiveis.map((p) => (
-                      <p key={p.dataKey} style={{ margin: 0, color: p.color }}>
-                        {`${p.name}: ${
-                          p.value !== null && p.value !== undefined ? `${p.value} cm` : "Ausente"
-                        }`}
-                      </p>
-                    ))}
+                    {visiveis.map((p) => {
+                      // Para a linha observada, mostra o valor medido (não o interpolado)
+                      const valor =
+                        p.dataKey === "observadoLinha" ? p.payload.observado : p.value;
+
+                      return (
+                        <p key={p.dataKey} style={{ margin: 0, color: p.color }}>
+                          {`${p.name}: ${
+                            valor !== null && valor !== undefined ? `${valor} cm` : "Ausente"
+                          }`}
+                        </p>
+                      );
+                    })}
 
                     {cotaInundacao !== null && (
                       <p style={{ margin: 0, color: "#2e7d32", fontWeight: 400 }}>
@@ -688,15 +637,15 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
               }}
             />
 
-            {/* Linha: observado */}
+            {/* Linha: observado (usa observadoLinha, sem buracos internos) */}
             <Line
               type="monotone"
-              dataKey="observado"
+              dataKey="observadoLinha"
               name={isDefesaCivil ? "Observado - DC" : "Observado - CIEX"}
               stroke={isDefesaCivil ? "#F9A825" : "#ff7300"}
               strokeWidth={2.5}
               dot={false}
-              connectNulls={isDefesaCivil}
+              connectNulls={false}
               isAnimationActive={false}
             />
 
