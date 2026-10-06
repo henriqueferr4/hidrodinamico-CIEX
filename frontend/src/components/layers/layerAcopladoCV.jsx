@@ -81,6 +81,16 @@ const TAMANHO_SETAS = [
   ])
 ];
 
+const TAMANHO_SETAS_VENTO = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  3, 10,
+  5, 14,
+  7, 18,
+  10, 24,
+  15, 48
+];
 /* ==================== FUNÇÕES AUXILIARES ==================== */
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -941,18 +951,13 @@ export default function LayerAcopladoCV({
 
       {/* Direção do vento */}
       <Source id="vento-direcao" type="geojson" data={vento.direcao ?? VAZIO}>
-        <Layer
-          id="vento-direcao-setas"
-          type="symbol"
-          layout={layoutSetas(
-            direcaoVento,
-            // Com as duas setas ativas, o vento ignora colisão para não
-            // esconder as setas de corrente (o Mapbox oculta símbolos que se tocam)
-            { "text-ignore-placement": direcaoCorrente }
-          )}
-          paint={ESTILO_SETAS.vento}
-        />
-      </Source>
+      <Layer
+        id="vento-direcao-setas"
+        type="symbol"
+        layout={layoutSetas(direcaoVento, { "text-size": TAMANHO_SETAS_VENTO })}
+        paint={ESTILO_SETAS.vento}
+      />
+    </Source>
     </>
   );
 }
