@@ -1,9 +1,9 @@
 import TsunamiIcon from "@mui/icons-material/Tsunami";
 import AirIcon from "@mui/icons-material/Air";
-import { useState, useEffect } from "react";
-import { Source, Layer } from "react-map-gl/mapbox";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import { useState, useEffect, useMemo } from "react";
+import { Source, Layer, useMap } from "react-map-gl/mapbox";
 
 /* ==================== CONSTANTES ==================== */
 
@@ -81,17 +81,85 @@ const TAMANHO_SETAS = [
   ])
 ];
 
-const TAMANHO_SETAS_VENTO = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  3, 10,
-  5, 14,
-  7, 18,
-  10, 24,
-  15, 48
-];
 /* ==================== FUNÇÕES AUXILIARES ==================== */
+
+// Mesma tabela de TAMANHO_SETAS, em JS, para calcular o espaçamento da grade
+const PONTOS_TAMANHO = [[3, 10], [5, 14], [7, 18], [10, 24], [15, 48]];
+const FATOR_ESPACAMENTO = 1.3; // aumente para menos setas, diminua para mais
+
+function tamanhoSetaPx(zoom) {
+  const pts = PONTOS_TAMANHO.map(([z, t]) => [z, t * ESCALA_SETAS]);
+  if (zoom <= pts[0][0]) return pts[0][1];
+  if (zoom >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [z0, t0] = pts[i];
+    const [z1, t1] = pts[i + 1];
+    if (zoom >= z0 && zoom <= z1) return t0 + ((zoom - z0) / (z1 - z0)) * (t1 - t0);
+  }
+  return pts[0][1];
+}
+
+// Ponto representativo da feature (Point, ou centro do bbox para outras geometrias)
+function coordenadaRepresentativa(geometry) {
+  const c = geometry?.coordinates;
+  if (!c) return null;
+  if (typeof c[0] === "number") return c;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const percorrer = (a) => {
+    if (typeof a[0] === "number") {
+      minX = Math.min(minX, a[0]);
+      maxX = Math.max(maxX, a[0]);
+      minY = Math.min(minY, a[1]);
+      maxY = Math.max(maxY, a[1]);
+    } else {
+      a.forEach(percorrer);
+    }
+  };
+  percorrer(c);
+  return Number.isFinite(minX) ? [(minX + maxX) / 2, (minY + maxY) / 2] : null;
+}
+
+// Mantém uma seta por célula; a célula é medida em pixels da tela (projeção Mercator do Mapbox)
+function afinarPorZoom(geojson, zoom) {
+  if (!geojson?.features?.length) return geojson;
+
+  const mundo = 512 * Math.pow(2, zoom);
+  const celula = tamanhoSetaPx(zoom) * FATOR_ESPACAMENTO;
+
+  const ocupadas = new Set();
+  const features = geojson.features.filter((f) => {
+    const c = coordenadaRepresentativa(f.geometry);
+    if (!c) return true;
+
+    const x = ((c[0] + 180) / 360) * mundo;
+    const s = Math.min(Math.max(Math.sin((c[1] * Math.PI) / 180), -0.9999), 0.9999);
+    const y = (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * mundo;
+
+    const chave = `${Math.floor(x / celula)}_${Math.floor(y / celula)}`;
+    if (ocupadas.has(chave)) return false;
+    ocupadas.add(chave);
+    return true;
+  });
+
+  return { ...geojson, features };
+}
+
+function useZoomDoMapa() {
+  const { current: mapa } = useMap();
+  const [zoom, setZoom] = useState(5);
+
+  useEffect(() => {
+    if (!mapa) return;
+    const m = mapa.getMap();
+    const atualizar = () => setZoom(Math.round(m.getZoom() * 4) / 4); // passos de 0,25
+    atualizar();
+    m.on("zoomend", atualizar);
+    return () => m.off("zoomend", atualizar);
+  }, [mapa]);
+
+  return zoom;
+}
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -269,8 +337,8 @@ function LinhaCamada({ ativo, onToggle, rotulo, amostra, isMobile }) {
           display: "flex",
           justifyContent: "center",
           flexShrink: 0,
-          color: ativo ? AZUL : CINZA_TEXTO,   
-          transition: "color 0.2s"  
+          color: ativo ? AZUL : CINZA_TEXTO,
+          transition: "color 0.2s"
         }}
       >
         {amostra}
@@ -318,7 +386,7 @@ function LinhaCamada({ ativo, onToggle, rotulo, amostra, isMobile }) {
   );
 }
 
-function CabecalhoGrupo({ titulo,  isMobile }) {
+function CabecalhoGrupo({ titulo, isMobile }) {
   return (
     <div
       style={{
@@ -338,7 +406,6 @@ function CabecalhoGrupo({ titulo,  isMobile }) {
       >
         {titulo}
       </span>
-
     </div>
   );
 }
@@ -411,6 +478,24 @@ export default function LayerAcopladoCV({
     queroVelocidade: velocidadeVentoOn,
     queroDirecao: direcaoVento
   });
+
+  // Com as duas direções ativas, a densidade é controlada pelo zoom nos dados
+  const ambasDirecoes = direcaoCorrente && direcaoVento;
+  const zoomMapa = useZoomDoMapa();
+
+  const direcaoCorrenteDados = useMemo(
+    () => (ambasDirecoes ? afinarPorZoom(corrente.direcao, zoomMapa) : corrente.direcao),
+    [ambasDirecoes, corrente.direcao, zoomMapa]
+  );
+  const direcaoVentoDados = useMemo(
+    () => (ambasDirecoes ? afinarPorZoom(vento.direcao, zoomMapa) : vento.direcao),
+    [ambasDirecoes, vento.direcao, zoomMapa]
+  );
+
+  // Sem colisão entre as camadas quando as duas estão ativas
+  const semColisao = ambasDirecoes
+    ? { "text-allow-overlap": true, "text-ignore-placement": true }
+    : {};
 
   // Effect do Timer (Play/Pause)
   useEffect(() => {
@@ -574,7 +659,7 @@ export default function LayerAcopladoCV({
           {aberto && (
             <div style={{ marginTop: isMobile ? "6px" : "10px" }}>
               {/* Velocidade: uma por vez */}
-              <CabecalhoGrupo titulo="Velocidade"  isMobile={isMobile} />
+              <CabecalhoGrupo titulo="Velocidade" isMobile={isMobile} />
               <LinhaCamada
                 rotulo="Corrente"
                 ativo={velocidadeCorrenteOn}
@@ -586,7 +671,7 @@ export default function LayerAcopladoCV({
                 rotulo="Vento"
                 ativo={velocidadeVentoOn}
                 onToggle={() => alternarVelocidade("vento")}
-                amostra={<AirIcon sx={{ fontSize: isMobile ? 16 : 18 }} />} 
+                amostra={<AirIcon sx={{ fontSize: isMobile ? 16 : 18 }} />}
                 isMobile={isMobile}
               />
 
@@ -599,7 +684,7 @@ export default function LayerAcopladoCV({
               />
 
               {/* Direção: combináveis */}
-              <CabecalhoGrupo titulo="Direção"  isMobile={isMobile} />
+              <CabecalhoGrupo titulo="Direção" isMobile={isMobile} />
               <LinhaCamada
                 rotulo="Corrente"
                 ativo={direcaoCorrente}
@@ -940,24 +1025,24 @@ export default function LayerAcopladoCV({
       </Source>
 
       {/* Direção da corrente */}
-      <Source id="corrente-direcao" type="geojson" data={corrente.direcao ?? VAZIO}>
+      <Source id="corrente-direcao" type="geojson" data={direcaoCorrenteDados ?? VAZIO}>
         <Layer
           id="corrente-direcao-setas"
           type="symbol"
-          layout={layoutSetas(direcaoCorrente)}
+          layout={layoutSetas(direcaoCorrente, semColisao)}
           paint={ESTILO_SETAS.corrente}
         />
       </Source>
 
       {/* Direção do vento */}
-      <Source id="vento-direcao" type="geojson" data={vento.direcao ?? VAZIO}>
-      <Layer
-        id="vento-direcao-setas"
-        type="symbol"
-        layout={layoutSetas(direcaoVento, { "text-size": TAMANHO_SETAS_VENTO })}
-        paint={ESTILO_SETAS.vento}
-      />
-    </Source>
+      <Source id="vento-direcao" type="geojson" data={direcaoVentoDados ?? VAZIO}>
+        <Layer
+          id="vento-direcao-setas"
+          type="symbol"
+          layout={layoutSetas(direcaoVento, semColisao)}
+          paint={ESTILO_SETAS.vento}
+        />
+      </Source>
     </>
   );
 }
