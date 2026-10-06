@@ -4,6 +4,7 @@ import LayerVazao from "./layers/layerVazao";
 import LineChartVazao from "./LineChartVazao";
 import LayerVento from "./layers/layerVento";
 import LayerCorrente from "./layers/layerCorrente";
+import LayerAcopladoCV from "./layers/layerAcopladoCV.jsx";
 import LayerMalha from "./layers/layerMalha"
 import { useState, useEffect, useRef } from "react";
 import Map, { NavigationControl } from "react-map-gl/mapbox";
@@ -176,6 +177,17 @@ export default function MapView({
         {/* 4. Camada de Corrente */}
         {variavelAtiva === "corrente" && ( 
           <LayerCorrente
+            timeStep={timeStep}
+            setTimeStep={setTimeStep}
+            dataFormatada={dataFormatada}
+            setDataFormatada={setDataFormatada}
+            fonteDados={fonteDados} 
+          />
+        )}
+
+        {/* 5. Camada de Corrente_Vento */}
+        {variavelAtiva === "corrente_acp" && ( 
+          <LayerAcopladoCV
             timeStep={timeStep}
             setTimeStep={setTimeStep}
             dataFormatada={dataFormatada}

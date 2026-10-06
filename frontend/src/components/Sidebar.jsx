@@ -41,6 +41,7 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen, vari
   { label: "Vazão", value: "vazao", icon: <SouthEastIcon /> },
   { label: "Corrente", value: "corrente", icon: <TsunamiIcon /> },
   { label: "Vento", value: "vento", icon: <AirIcon /> },
+  { label: "Corrente 2", value: "corrente_acp", icon: <TsunamiIcon/> },
 ];
 
   const textStyle = {
