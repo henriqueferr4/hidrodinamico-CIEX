@@ -37,6 +37,7 @@ export default function LayerNivel({
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataBaseTimeline, setDataBaseTimeline] = useState(null);
   const isCenario = fonteDados === "cenario1";
+  const [estacoesAbertas, setEstacoesAbertas] = useState(true);
 
   const maxTimeStep = isCenario
     ? 30 * 24   // 30 dias = 720 horas
@@ -281,92 +282,124 @@ export default function LayerNivel({
         border: "1px solid rgba(255, 255, 255, 0.4)",
       }}
     >
-      {/* Título */}
-      <div
-        style={{
-          fontSize: isMobile ? "10px" : "12px",
-          fontWeight: "700",
-          marginBottom: isMobile ? "6px" : "10px",
-          color: "#2A3D59",
-        }}
-      >
-        ESTAÇÕES
-      </div>
-
-      {/* Botões */}
-      <div
+      {/* Título / botão de abrir-fechar */}
+      <button
+        type="button"
+        aria-expanded={estacoesAbertas}
+        onClick={() => setEstacoesAbertas((v) => !v)}
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: isMobile ? "3px" : "5px",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          padding: 0,
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "inherit",
         }}
       >
-        {[...STATIONS]
-          .sort((a, b) =>
-            a.nome.localeCompare(b.nome, "pt-BR", {
-              sensitivity: "base",
-            })
-          )
-          .map((station) => {
-            const defesaCivil = isDefesaCivil(station.id);
+        <span
+          style={{
+            fontSize: isMobile ? "10px" : "12px",
+            fontWeight: "700",
+            color: "#2A3D59",
+          }}
+        >
+          ESTAÇÕES
+        </span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          style={{
+            transform: estacoesAbertas ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+          }}
+        >
+          <path
+            d="M2.5 4.5L6 8L9.5 4.5"
+            stroke="#2A3D59"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
 
-            const selecionada =
-              estacaoSelecionada?.id === station.id;
+      {/* Botões */}
+      {estacoesAbertas && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isMobile ? "3px" : "5px",
+            marginTop: isMobile ? "6px" : "10px",
+          }}
+        >
+          {[...STATIONS]
+            .sort((a, b) =>
+              a.nome.localeCompare(b.nome, "pt-BR", {
+                sensitivity: "base",
+              })
+            )
+            .map((station) => {
+              const defesaCivil = isDefesaCivil(station.id);
 
-            const stationColor = defesaCivil
-              ? "#F9A825"
-              : "#2A3D59";
+              const selecionada = estacaoSelecionada?.id === station.id;
 
-            return (
-              <button
-                key={station.id}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selecionarEstacao(station, true);
-                }}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
+              const stationColor = defesaCivil ? "#F9A825" : "#2A3D59";
 
-                  background: selecionada
-                    ? "rgba(42, 61, 89, 0.10)"
-                    : "rgba(255,255,255,0.55)",
-
-                  border: selecionada
-                    ? `1px solid ${stationColor}`
-                    : "1px solid rgba(42,61,89,0.08)",
-
-                  borderRadius: "7px",
-
-                  padding: isMobile
-                    ? "5px 6px"
-                    : "7px 8px",
-
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "all 0.15s ease",
-                  fontFamily: "inherit",
-                }}
-              >
-                <span
+              return (
+                <button
+                  key={station.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selecionarEstacao(station, true);
+                  }}
                   style={{
-                    fontSize: isMobile ? "9px" : "12px",
-                    fontWeight: selecionada ? "700" : "600",
-                    color: stationColor,
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
 
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                    background: selecionada
+                      ? "rgba(42, 61, 89, 0.10)"
+                      : "rgba(255,255,255,0.55)",
+
+                    border: selecionada
+                      ? `1px solid ${stationColor}`
+                      : "1px solid rgba(42,61,89,0.08)",
+
+                    borderRadius: "7px",
+
+                    padding: isMobile ? "5px 6px" : "7px 8px",
+
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.15s ease",
+                    fontFamily: "inherit",
                   }}
                 >
-                  {station.nome}
-                </span>
-              </button>
-            );
-          })}
-      </div>
+                  <span
+                    style={{
+                      fontSize: isMobile ? "9px" : "12px",
+                      fontWeight: selecionada ? "700" : "600",
+                      color: stationColor,
+
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {station.nome}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+      )}
     </div>
 
     {/* ===================================================== */}
