@@ -98,14 +98,6 @@ export default function MapView({
     };
   }, [estacaoSelecionada]);
 
-  const [geojsonVazao, setGeojsonVazao] = useState(null);
-
-  useEffect(() => {
-      fetch("/data/previsao/vazao/rios_vazao.geojson")
-          .then(r => r.json())
-          .then(setGeojsonVazao);
-  }, []);
-
   useEffect(() => {
   if (!rioSelecionado) return;
 
