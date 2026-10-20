@@ -73,8 +73,14 @@ function formatarAtualizacao(texto) {
   return `Previsão atualizada em ${Number(dia)} de ${MESES[Number(mes) - 1]} às ${hora}:${minuto} h`;
 }
 
-export const caminhoHistorico = (nomeSensor, dataRef) =>
-  `/data/historico/${dataRef}/time_series_${nomeSensor}_${dataRef}.csv`;
+// Pastas e arquivos do histórico seguem AAAAMMDDhh; só a rodada das 00h é usada.
+// Ex.: /data/historico/2026101600/time_series_Arambare_2026101600.csv
+const HORA_HISTORICO = "00";
+
+export const caminhoHistorico = (nomeSensor, dataRef) => {
+  const referencia = `${dataRef}${HORA_HISTORICO}`; // dataRef: AAAAMMDD
+  return `/data/historico/${referencia}/time_series_${nomeSensor}_${referencia}.csv`;
+};
 
 export { SENSOR_POR_ID };
 
