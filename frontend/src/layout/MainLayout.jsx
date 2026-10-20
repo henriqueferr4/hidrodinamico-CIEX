@@ -1,57 +1,36 @@
-import { useState } from "react";
-import Header from "../components/Header"; 
-import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import PainelControle, { LARGURA_PAINEL, LARGURA_TRILHO } from "../components/PainelControle";
 import { Box, Toolbar } from "@mui/material";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
-export default function MainLayout({
-  children,
-  activeView,
-  setActiveView,
-  sidebarOpen,
-  setSidebarOpen,
-  variavelAtiva,
-  setVariavelAtiva,
-  fonteDados,
-  setFonteDados
-}) {
-  
+export default function MainLayout({ children, painel }) {
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const drawerWidth = sidebarOpen ? 240 : 80;
+  const larguraPainel = painel.open ? LARGURA_PAINEL : LARGURA_TRILHO;
 
   return (
-    <Box sx={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      height: "100vh", 
+    <Box sx={{
+      display: "flex",
+      flexDirection: "column",
+      height: "100vh",
       width: "100vw" }}>
 
-      <Header drawerWidth={drawerWidth} />
+      <Header />
 
       <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", position: "relative" }}>
 
-      <Box 
-            sx={{ 
-            width: isMobile ? 0 : drawerWidth, 
+      <Box
+            sx={{
+            width: isMobile ? 0 : larguraPainel,
             flexShrink: 0,
             height: "100%",
-            pt: "64px" 
+            pt: "64px",
+            transition: "width 0.3s"
           }}
         >
-
-        
-      <Sidebar
-        activeView={activeView}
-        setActiveView={setActiveView}
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
-        variavelAtiva={variavelAtiva}
-        setVariavelAtiva={setVariavelAtiva}
-        fonteDados={fonteDados}
-        setFonteDados={setFonteDados}
-      />
+        <PainelControle {...painel} />
       </Box>
       <Box
         component="main"
@@ -69,7 +48,7 @@ export default function MainLayout({
             flexGrow: 1,
             position: "relative",
             overflow: "hidden",
-            
+
           }}
         >
           {children}

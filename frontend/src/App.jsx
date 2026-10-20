@@ -1,26 +1,86 @@
-import { useState, useEffect  } from "react";
+import { useState, useEffect, useRef } from "react";
 import MainLayout from "./layout/MainLayout";
+import { ehCenario } from "./components/layers/camadas";
 import Modal from "react-modal";
 import "./components/Modal.css";
-import ChartNivel from "./components/LineChartNivel";
-import ChartContainer from "./components/ChartContainer";
 import MapView from "./components/MapView";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
 Modal.setAppElement("#root");
 
+
 function App() {
   // Controla telas internas do dashboard (inicia direto em "nivel")
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [modalAberto, setModalAberto] = useState(false);
-  const [activeView, setActiveView] = useState("nivel");
   const [timeStep, setTimeStep] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [variavelAtiva, setVariavelAtiva] = useState("nivel");
+  const [painelAberto, setPainelAberto] = useState(true);
   const [fonteDados, setFonteDados] = useState("previsao");
-  const [estacaoSelecionada, setEstacaoSelecionada] = useState(null);
+
+  // Gráficos abertos (nível ou vazão). No máximo dois: um fixado no canto
+  // superior esquerdo e um ancorado no ponto do mapa.
+  // - Abrir um gráfico substitui o ancorado (o fixado permanece)
+  // - "Fixar na tela" leva o gráfico para o canto; um fixado anterior é fechado
+  const [graficos, setGraficos] = useState([]);
+
+  const abrirGrafico = (tipo, ponto) => {
+    const chave = `${tipo}-${ponto.id}`;
+    setGraficos((atuais) => {
+      if (atuais.some((g) => g.chave === chave)) return atuais;
+      const novo = {
+        chave,
+        tipo,
+        fixado: false,
+        ponto: { id: ponto.id, nome: ponto.nome, latitude: ponto.latitude, longitude: ponto.longitude }
+      };
+      return [...atuais.filter((g) => g.fixado), novo];
+    });
+  };
+
+  const fixarGrafico = (chave) =>
+    setGraficos((atuais) =>
+      atuais
+        .filter((g) => g.chave === chave || !g.fixado)
+        .map((g) => (g.chave === chave ? { ...g, fixado: true } : g))
+    );
+
+  const fecharGrafico = (chave) => setGraficos((atuais) => atuais.filter((g) => g.chave !== chave));
+
+  // Camadas do mapa, controladas pelo painel
+  const [camadaBase, setCamadaBase] = useState("nivel"); // "nivel" | "corrente" | "vento" | "vazao" | null (malha)
+  const [vetores, setVetores] = useState({ corrente: false, vento: false });
+  const [mostrarMalha, setMostrarMalha] = useState(false);
+
+  // Malha é exclusiva: ao ativar, as demais camadas são desligadas e guardadas
+  // para serem restauradas quando a malha for desativada
+  const camadasAntesDaMalha = useRef(null);
+
+  const alternarMalha = (ativo) => {
+    setMostrarMalha(ativo);
+    if (ativo) {
+      camadasAntesDaMalha.current = { camadaBase, vetores };
+      setCamadaBase(null);
+      setVetores({ corrente: false, vento: false });
+    } else {
+      const anterior = camadasAntesDaMalha.current;
+      const base = anterior?.camadaBase ?? "nivel";
+      setCamadaBase(base === "vazao" && ehCenario(fonteDados) ? "nivel" : base);
+      setVetores(anterior?.vetores ?? { corrente: false, vento: false });
+    }
+  };
+
+  // Escolher qualquer outra camada desativa a malha
+  const selecionarBase = (id) => {
+    setMostrarMalha(false);
+    setCamadaBase(id);
+  };
+
+  const alterarVetores = (atualizar) => {
+    setMostrarMalha(false);
+    setVetores(atualizar);
+  };
 
   useEffect(() => {
     setModalAberto(true);
@@ -28,9 +88,26 @@ function App() {
 
   useEffect(() => {
     if (isMobile) {
-      setSidebarOpen(false);
+      setPainelAberto(false);
     }
   }, [isMobile]);
+
+  // Na camada de vazão só existem pontos de vazão (e, nas demais, só estações):
+  // fecha os gráficos do tipo que deixou de estar visível
+  useEffect(() => {
+    const tipoVisivel = camadaBase === "vazao" ? "vazao" : "nivel";
+    setGraficos((atuais) => atuais.filter((g) => g.tipo === tipoVisivel));
+  }, [camadaBase]);
+
+  // Previsão e cenário têm horizontes diferentes: a timeline recomeça
+  const trocarFonte = (fonte) => {
+    if (fonte === fonteDados) return;
+    setFonteDados(fonte);
+    setTimeStep(0);
+    setGraficos([]);
+    // Vazão só existe na previsão
+    if (camadaBase === "vazao") setCamadaBase("nivel");
+  };
 
   return (
       // Modal: tela de aviso inicial com informações sobre a ferramenta
@@ -56,30 +133,38 @@ function App() {
       </Modal>
 
 {/* Layout Principal da Aplicação */}
-      <MainLayout 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen}
-        variavelAtiva={variavelAtiva}
-        setVariavelAtiva={setVariavelAtiva}
-        fonteDados={fonteDados}
-        setFonteDados={setFonteDados}
+      <MainLayout
+        painel={{
+          open: painelAberto,
+          setOpen: setPainelAberto,
+          fonteDados,
+          setFonteDados: trocarFonte,
+          camadaBase,
+          setCamadaBase: selecionarBase,
+          vetores,
+          setVetores: alterarVetores,
+          mostrarMalha,
+          setMostrarMalha: alternarMalha
+        }}
       >
         {/* DASHBOARD HIDRODINÂMICO */}
-        {variavelAtiva && (
           <div style={styles.dashboardContainer}>
             <div style={styles.mapSection}>
               <MapView
-                estacaoSelecionada={estacaoSelecionada}
-                setEstacaoSelecionada={setEstacaoSelecionada}
+                graficos={graficos}
+                abrirGrafico={abrirGrafico}
+                fecharGrafico={fecharGrafico}
+                fixarGrafico={fixarGrafico}
                 timeStep={timeStep}
                 setTimeStep={setTimeStep}
-                sidebarOpen={sidebarOpen}
-                variavelAtiva={variavelAtiva} 
-                fonteDados={fonteDados}      
+                painelAberto={painelAberto}
+                fonteDados={fonteDados}
+                camadaBase={camadaBase}
+                vetores={vetores}
+                mostrarMalha={mostrarMalha}
               />
             </div>
           </div>
-        )}
       </MainLayout>
      </>
   );

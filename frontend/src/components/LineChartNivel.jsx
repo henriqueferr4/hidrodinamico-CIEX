@@ -50,7 +50,55 @@ const ESTACOES_LINHA_COTA_OCULTA = [2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
 
 const ESTACOES_DEFESA_CIVIL = [8, 9, 10, 11];
 
-const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }, ref) {
+// Previsão do histórico (CSV: data,valor_real,valor_corrigido). Usa o valor
+// corrigido, equivalente ao campo "valor" da previsão atual.
+function lerCsvPrevisao(texto) {
+  const [cabecalho, ...linhas] = texto.trim().split(/\r?\n/);
+  const colunas = cabecalho.split(",");
+  const iData = colunas.indexOf("data");
+  const iValor = colunas.indexOf("valor_corrigido");
+  return linhas
+    .map((linha) => linha.split(","))
+    .map((c) => ({ data: c[iData], valor: c[iValor] === "" ? null : Number(c[iValor]) }));
+}
+
+const MESES = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
+
+// "2026-10-19T14:15:31.510299Z" → "Previsão atualizada em 19 de out. às 14:15 h"
+// (horário como está no arquivo, seguindo o mesmo tratamento das demais datas do gráfico)
+function formatarAtualizacao(texto) {
+  const m = /^\d{4}-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(texto ?? "");
+  if (!m) return null;
+  const [, mes, dia, hora, minuto] = m;
+  return `Previsão atualizada em ${Number(dia)} de ${MESES[Number(mes) - 1]} às ${hora}:${minuto} h`;
+}
+
+export const caminhoHistorico = (nomeSensor, dataRef) =>
+  `/data/historico/${dataRef}/time_series_${nomeSensor}_${dataRef}.csv`;
+
+export { SENSOR_POR_ID };
+
+/**
+ * Gráfico de nível da estação.
+ * - dataHistorico (AAAAMMDD): usa a previsão do histórico em vez da atual
+ * - compacto: cabeçalho menor (gráficos secundários)
+ * - ocultarCabecalho: o cabeçalho é exibido pelo componente pai (fixo no pop-up);
+ *   no PNG baixado ele é desenhado sobre a imagem
+ * - onDados: recebe a série unificada (previsão + observado) ao carregar
+ * - onAtualizadoEm: recebe a data da última atualização, já formatada
+ */
+const ChartNivel = forwardRef(function ChartNivel(
+  {
+    estacaoSelecionada,
+    titulo,
+    dataHistorico = null,
+    compacto = false,
+    ocultarCabecalho = false,
+    onDados,
+    onAtualizadoEm
+  },
+  ref
+) {
   // ---------------------------------------------------------------------
   // ESTADOS E REFS
   // ---------------------------------------------------------------------
@@ -58,6 +106,8 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [erroMedio, setErroMedio] = useState(null);
+  const [semPrevisao, setSemPrevisao] = useState(false);
+  const [atualizadoEm, setAtualizadoEm] = useState(null);
 
   const cotaInundacao = COTA_INUNDACAO_POR_ID[estacaoSelecionada.id] ?? null;
   const ocultarLinhaCota = ESTACOES_LINHA_COTA_OCULTA.includes(estacaoSelecionada.id);
@@ -175,7 +225,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
       const node = chartRef.current;
       const { width, height } = node.getBoundingClientRect();
 
-      const dataUrl = await htmlToImage.toPng(chartRef.current, {
+      const opcoes = {
         pixelRatio: 3,
         backgroundColor: "#ffffff",
         width: width + PADDING * 2,
@@ -188,7 +238,11 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
           width: `${width}px`,
           height: `${height}px`,
         },
-      });
+      };
+
+      const dataUrl = ocultarCabecalho
+        ? await comCabecalho(await htmlToImage.toCanvas(node, opcoes), opcoes.pixelRatio)
+        : await htmlToImage.toPng(node, opcoes);
 
       const link = document.createElement("a");
       link.download = `nivel_${SENSOR_POR_ID[estacaoSelecionada.id]}.png`;
@@ -197,6 +251,53 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Desenha o cabeçalho (estação, título e atualização) acima do gráfico no PNG
+  const comCabecalho = (canvasGrafico, escala) => {
+    const alturaCabecalho = 52 * escala;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasGrafico.width;
+    canvas.height = canvasGrafico.height + alturaCabecalho;
+
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const margem = 16 * escala;
+    const fonte = getComputedStyle(document.body).fontFamily || "sans-serif";
+    ctx.textBaseline = "alphabetic";
+
+    ctx.fillStyle = "#2A3D59";
+    ctx.font = `700 ${18 * escala}px ${fonte}`;
+    ctx.fillText(estacaoSelecionada.nome, margem, 26 * escala);
+
+    ctx.fillStyle = "#718096";
+    ctx.font = `600 ${11 * escala}px ${fonte}`;
+    ctx.fillText((titulo ?? "").toUpperCase(), margem, 44 * escala);
+
+    if (atualizadoEm) {
+      // Mesmo destaque do pop-up: texto azul em "pílula" de fundo claro
+      const texto = atualizadoEm;
+      ctx.font = `700 ${12 * escala}px ${fonte}`;
+      const largura = ctx.measureText(texto).width + 20 * escala;
+      const alturaPilula = 20 * escala;
+      const x = canvas.width - margem - largura;
+      const y = 12 * escala;
+
+      ctx.fillStyle = "rgba(42, 61, 89, 0.1)";
+      ctx.beginPath();
+      ctx.roundRect(x, y, largura, alturaPilula, alturaPilula / 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#2A3D59";
+      ctx.textBaseline = "middle";
+      ctx.fillText(texto, x + 10 * escala, y + alturaPilula / 2);
+      ctx.textBaseline = "alphabetic";
+    }
+
+    ctx.drawImage(canvasGrafico, 0, alturaCabecalho);
+    return canvas.toDataURL("image/png");
   };
 
   // Expõe a função de download para o componente pai via ref
@@ -214,14 +315,25 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
     if (!nomeSensor) return;
 
     setLoading(true);
+    setSemPrevisao(false);
+
+    const carregarPrevisao = dataHistorico
+      ? fetch(caminhoHistorico(nomeSensor, dataHistorico))
+          .then((res) => {
+            if (!res.ok) throw new Error("Previsão do histórico não encontrada");
+            return res.text();
+          })
+          .then(lerCsvPrevisao)
+          .catch(() => null)
+      : fetch(`/data/time_serie_${nomeSensor}.json`)
+          .then((res) => res.json())
+          .catch(() => []);
 
     Promise.all([
       fetch(`/data/observado_sensor_${nomeSensor}.json`)
         .then((res) => res.json())
         .catch(() => []),
-      fetch(`/data/time_serie_${nomeSensor}.json`)
-        .then((res) => res.json())
-        .catch(() => []),
+      carregarPrevisao,
       fetch(`/data/correcao_niveis.json`)
         .then((res) => res.json())
         .catch(() => ({})),
@@ -233,10 +345,24 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
         : Promise.resolve([]),
     ])
       .then(([jsonObservado, jsonPrevisao, jsonCorrecao, jsonHidrosens]) => {
+        if (jsonPrevisao === null) {
+          setSemPrevisao(true);
+          setData([]);
+          onDados?.([]);
+          setLoading(false);
+          return;
+        }
+
         const mapaAgrupado = {};
 
+        // --- Data da última atualização (não se aplica às previsões do histórico) ---
+        const atualizacao = dataHistorico ? null : formatarAtualizacao(jsonCorrecao.gerado_em);
+        setAtualizadoEm(atualizacao);
+        onAtualizadoEm?.(atualizacao);
+
         // --- Erro médio de correção (usado na faixa de erro e no tooltip) ---
-        const erro = jsonCorrecao[nomeSensor]?.mae_corrigido_cm;
+        // Não é exibido nas previsões do histórico
+        const erro = dataHistorico ? null : jsonCorrecao[nomeSensor]?.mae_corrigido_cm;
 
         if (erro !== undefined && erro !== null) {
           setErroMedio(Number(erro.toFixed(2)));
@@ -380,13 +506,14 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
         });
 
         setData(listaComLinha);
+        onDados?.(listaComLinha);
         setLoading(false);
       })
       .catch((error) => {
         console.error("Erro geral na unificação das séries:", error);
         setLoading(false);
       });
-  }, [estacaoSelecionada]);
+  }, [estacaoSelecionada, dataHistorico, onDados, onAtualizadoEm]);
 
   // ---------------------------------------------------------------------
   // RENDER — estado de carregamento
@@ -409,6 +536,24 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
     );
   }
 
+  if (semPrevisao) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          height: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#718096",
+          fontSize: "12px",
+          fontWeight: "600",
+        }}
+      >
+        Previsão não encontrada para esta data.
+      </div>
+    );
+  }
+
   // ---------------------------------------------------------------------
   // RENDER — gráfico principal
   // ---------------------------------------------------------------------
@@ -425,8 +570,9 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
         }}
       >
         {/* Cabeçalho: nome da estação e título do gráfico */}
+        {!ocultarCabecalho && (
         <div style={{ display: "flex", flexDirection: "column", padding: "4px 4px 0 4px" }}>
-          <span style={{ fontSize: "18px", fontWeight: "700", color: "#2A3D59" }}>
+          <span style={{ fontSize: compacto ? "14px" : "18px", fontWeight: "700", color: "#2A3D59" }}>
             {estacaoSelecionada.nome}
           </span>
           <span
@@ -440,8 +586,16 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
           >
             {titulo}
           </span>
+          {atualizadoEm && (
+            <span style={{ fontSize: "11px", color: "#718096", fontWeight: "500", marginTop: "1px" }}>
+              {atualizadoEm}
+            </span>
+          )}
         </div>
+        )}
 
+        {/* Ocupa só o espaço abaixo do cabeçalho (o eixo X não é cortado) */}
+        <div style={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 30, left: 5, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -584,7 +738,9 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
                   ...(estacaoSelecionada.id === 7
                     ? [{ label: "Observado - HidroSens UFPel", color: "#7B1FA2", shape: "circle" }]
                     : []),
-                  { label: "Erro médio", color: "#808080", shape: "rect" },
+                  ...(erroMedio !== null
+                    ? [{ label: "Erro médio", color: "#808080", shape: "rect" }]
+                    : []),
                   ...(cotaInundacao !== null
                     ? [
                         {
@@ -703,6 +859,7 @@ const ChartNivel = forwardRef(function ChartNivel({ estacaoSelecionada, titulo }
             )}
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,22 @@
+/* Barra de rolagem fina e discreta */
+.rolagem-discreta {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 61, 89, 0.22) transparent;
+}
+
+.rolagem-discreta::-webkit-scrollbar {
+  width: 5px;
+}
+
+.rolagem-discreta::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rolagem-discreta::-webkit-scrollbar-thumb {
+  background: rgba(42, 61, 89, 0.22);
+  border-radius: 999px;
+}
+
+.rolagem-discreta::-webkit-scrollbar-thumb:hover {
+  background: rgba(42, 61, 89, 0.4);
+}
